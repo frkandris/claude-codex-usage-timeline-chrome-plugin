@@ -1,0 +1,32 @@
+.close-button:hover { background: var(--surface); }
+.settings-main { width: min(760px, calc(100% - 40px)); }
+.settings-heading { padding: 52px 0 24px; }
+.settings-panel { display: grid; gap: 0; padding: 0 28px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.setting-row, .check-row { min-height: 66px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.setting-row + .setting-row, .setting-group + .setting-row { border-top: 1px solid var(--line); }
+.setting-row > label, .setting-group legend { font-size: 14px; font-weight: 700; }
+.setting-row select { min-width: 156px; }
+.setting-group { min-width: 0; margin: 0; padding: 22px 0 10px; border: 0; border-top: 1px solid var(--line); }
+.setting-group legend { padding: 0; }
+.check-row { min-height: 46px; color: var(--muted); font-size: 13px; cursor: pointer; }
+.setting-toggle { min-height: 66px; border-top: 1px solid var(--line); color: var(--ink); font-weight: 700; }
+.check-row input { width: 18px; height: 18px; margin: 0; accent-color: var(--ink); }
+.save-status { color: var(--codex); font-size: 12px; }
+.save-status.error { color: var(--danger); }
+.auto-save-status { min-height: 38px; display: flex; align-items: center; border-top: 1px solid var(--line); }
+.data-actions { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 10px; margin-top: 18px; padding: 18px 28px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.data-actions h2 { font-size: 14px; }
+.data-actions button { min-height: 36px; padding: 0 12px; background: var(--paper); color: var(--ink); font-size: 12px; font-weight: 650; border: 1px solid var(--line); border-radius: 5px; }
+.data-actions button:hover { background: var(--surface); border-color: color-mix(in oklch, var(--line) 65%, var(--ink)); }
+.data-actions .danger-button { color: var(--danger); background: color-mix(in oklch, var(--danger) 5%, var(--surface)); border-color: color-mix(in oklch, var(--danger) 22%, var(--line)); }
+.data-actions .danger-button:hover { background: color-mix(in oklch, var(--danger) 9%, var(--surface)); border-color: color-mix(in oklch, var(--danger) 34%, var(--line)); }
+@media (max-width: 560px) {
+  .settings-main { width: min(100% - 28px, 760px); }
+  .settings-heading { padding-top: 42px; }
+  .settings-panel { padding: 0 18px; }
+  .setting-row { gap: 14px; }
+  .setting-row select { min-width: 0; max-width: 52%; }
+  .save-status { min-height: 38px; }
+  .data-actions { grid-template-columns: 1fr; align-items: stretch; padding: 18px; }
+  .data-actions button { width: 100%; }
+}

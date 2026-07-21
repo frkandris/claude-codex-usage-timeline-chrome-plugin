@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings · AI Usage Timeline</title>
+    <link rel="stylesheet" href="../dashboard/styles.css">
+    <link rel="stylesheet" href="settings.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="icon-button close-button" href="../dashboard/index.html" title="Close settings" aria-label="Close settings">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </a>
+    </header>
+
+    <main id="main" class="settings-main">
+      <section class="settings-heading" aria-labelledby="settingsTitle">
+        <h1 id="settingsTitle">Settings</h1>
+      </section>
+
+      <section class="settings-panel" aria-label="Usage settings">
+        <div class="setting-row">
+          <label for="refreshInterval">Refresh</label>
+          <select id="refreshInterval" name="refreshInterval">
+            <option value="5">5 min</option>
+            <option value="10">10 min</option>
+            <option value="15" selected>15 min</option>
+            <option value="30">30 min</option>
+            <option value="60">60 min</option>
+          </select>
+        </div>
+        <fieldset class="setting-group">
+          <legend>Services</legend>
+          <label class="check-row" for="claudeEnabled">
+            <span>Claude</span>
+            <input id="claudeEnabled" name="claudeEnabled" type="checkbox" checked>
+          </label>
+          <label class="check-row" for="codexEnabled">
+            <span>Codex</span>
+            <input id="codexEnabled" name="codexEnabled" type="checkbox" checked>
+          </label>
+        </fieldset>
+        <div class="setting-row">
+          <label for="badgeTarget">Icon badge</label>
+          <select id="badgeTarget" name="badgeTarget">
+            <option value="claude-session" data-provider="claude">Claude · 5h</option>
+            <option value="claude-weekly" data-provider="claude">Claude · week</option>
+            <option value="codex-session" data-provider="codex">Codex · 5h</option>
+            <option value="codex-weekly" data-provider="codex">Codex · week</option>
+            <option value="none">Off</option>
+          </select>
+        </div>
+        <label class="check-row setting-toggle" for="showProjection">
+          <span>Trend forecast</span>
+          <input id="showProjection" name="showProjection" type="checkbox" checked>
+        </label>
+        <span id="saveStatus" class="save-status auto-save-status" aria-live="polite"></span>
+      </section>
+
+      <section class="data-actions" aria-labelledby="dataTitle">
+        <h2 id="dataTitle">Data</h2>
+        <button id="exportButton" type="button">Export CSV</button>
+        <button id="clearButton" class="danger-button" type="button">Clear history</button>
+      </section>
+
+    </main>
+    <script type="module" src="settings.js"></script>
+  </body>
+</html>

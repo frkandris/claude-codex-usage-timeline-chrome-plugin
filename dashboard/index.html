@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Usage Timeline</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="top-actions">
+        <button id="refreshButton" class="primary-button" type="button" data-tooltip="Collect usage" aria-label="Collect usage">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19v-6M9 19V9M14 19v-4"/><path d="M19 4v8M16 9l3 3 3-3"/></svg>
+        </button>
+        <a class="icon-button" href="../settings/index.html" title="Settings" aria-label="Settings">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21h-4v-.08A1.7 1.7 0 0 0 8.96 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3v-4h.08A1.7 1.7 0 0 0 4.6 8.96a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1.03-1.56V3h4v.08A1.7 1.7 0 0 0 15.04 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.16.63.72 1.06 1.37 1.06H21v4h-.08A1.7 1.7 0 0 0 19.4 15Z"/></svg>
+        </a>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="overview" aria-label="Current usage limits">
+        <div class="provider-grid">
+          <article class="provider claude-provider" data-provider="claude">
+            <header><span class="provider-glyph">C</span><h2>Claude</h2><a class="provider-status" id="claudeStatus" href="https://claude.ai/new" target="_blank" rel="noreferrer">No data</a></header>
+            <div class="metrics">
+              <div class="metric"><span>5 hours</span><strong id="claudeSession">–</strong><div class="bar"><i id="claudeSessionBar"></i></div><small id="claudeSessionReset">–</small></div>
+              <div class="metric"><span>Week</span><strong id="claudeWeekly">–</strong><div class="bar"><i id="claudeWeeklyBar"></i></div><small id="claudeWeeklyReset">–</small></div>
+              <div class="metric"><span>Fable</span><strong id="claudeFable">–</strong><div class="bar"><i id="claudeFableBar"></i></div><small id="claudeFableReset">–</small></div>
+            </div>
+          </article>
+          <article class="provider codex-provider" data-provider="codex">
+            <header><span class="provider-glyph">X</span><h2>Codex</h2><a class="provider-status" id="codexStatus" href="https://chatgpt.com/codex" target="_blank" rel="noreferrer">No data</a></header>
+            <div class="metrics">
+              <div class="metric"><span>5 hours</span><strong id="codexSession">–</strong><div class="bar"><i id="codexSessionBar"></i></div><small id="codexSessionReset">–</small></div>
+              <div class="metric" id="codexWeeklyMetric"><span>Week</span><strong id="codexWeekly">–</strong><div class="bar"><i id="codexWeeklyBar"></i></div><small id="codexWeeklyReset">–</small></div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="timeline" aria-label="Usage history">
+        <div class="legend">
+          <span data-provider="claude"><i class="legend-line claude-line"></i>Claude · 5h</span>
+          <span data-provider="claude"><i class="legend-line claude-line weekly-line"></i>Claude · week</span>
+          <span data-provider="claude" id="claudeFableLegend"><i class="legend-line claude-line fable-line"></i>Claude · Fable</span>
+          <span data-provider="codex"><i class="legend-line codex-line"></i>Codex · 5h</span>
+          <span data-provider="codex" id="codexWeeklyLegend"><i class="legend-line codex-line weekly-line"></i>Codex · week</span>
+          <span id="projectionLegend"><i class="legend-line projection-line"></i>Forecast</span>
+          <div class="controls">
+            <label><span class="visually-hidden">Range</span><select id="rangeSelect"><option value="30m">30 min</option><option value="1h">1 hour</option><option value="2h">2 hours</option><option value="3h">3 hours</option><option value="4h">4 hours</option><option value="6h">6 hours</option><option value="12h">12 hours</option><option value="1" selected>24 hours</option><option value="48h">48 hours</option><option value="7">7 days</option><option value="30">30 days</option><option value="all">All</option></select></label>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="usageChart" role="img" aria-label="Claude and Codex usage over time"></canvas>
+          <div id="emptyState" class="empty-state" hidden>No data</div>
+          <div id="tooltip" class="tooltip" hidden></div>
+        </div>
+      </section>
+
+    </main>
+    <script type="module" src="dashboard.js"></script>
+  </body>
+</html>
