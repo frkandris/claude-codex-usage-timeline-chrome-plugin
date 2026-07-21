@@ -14,8 +14,9 @@ Terms as they are used in this codebase. Code references are against the initial
 - **`history`.** The append-only array of samples in `chrome.storage.local`, trimmed to
   `HISTORY_RETENTION_MS` = 90 days (`lib/usage.js:1`). See [[data-export-and-retention]].
 - **`used`.** A metric's utilization as a **0–100 percentage**. Normalized by `percent()`
-  (`lib/usage.js:8`): a value in `(0,1]` is treated as a fraction and ×100; everything is clamped to
-  0–100. `null` means "not available for this sample".
+  (`lib/usage.js:8`): a value in `(0,1)` (**strictly** below 1) is treated as a fraction and ×100;
+  everything is clamped to 0–100. The boundary is `< 1`, not `<= 1`, so an integer `1` reads as 1%,
+  not 100% — see [[2026-07-21-spurious-100-percent-at-one-percent]]. `null` means "not available".
 - **`resetsAt`.** Epoch-ms timestamp when a limit window resets, or `null`. Parsed by `resetTime()`
   (`lib/usage.js:15`) from `resets_at` / `reset_at` / `resetAt` (absolute) or `reset_after_seconds`
   (relative). Shown as "Resets <date>" or "No reset".

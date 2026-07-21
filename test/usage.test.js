@@ -12,6 +12,17 @@ test("parses Claude session and weekly utilization", () => {
   assert.equal(result.fable.resetsAt, Date.parse("2026-07-24T06:00:00Z"));
 });
 
+test("reads an integer 1 as 1%, not a full fraction", () => {
+  const result = parseClaudeUsage({ five_hour: { utilization: 1 }, seven_day: { utilization: 2 } });
+  assert.equal(result.session.used, 1);
+  assert.equal(result.weekly.used, 2);
+});
+
+test("still rescales a genuine sub-1 fraction", () => {
+  const result = parseClaudeUsage({ five_hour: { utilization: 0.42 } });
+  assert.equal(result.session.used, 42);
+});
+
 test("finds a nested Claude Fable limit", () => {
   const result = parseClaudeUsage({ five_hour: { utilization: 12 }, model_limits: [{ name: "Fable", utilization: 0.25 }] });
   assert.equal(result.fable.used, 25);
