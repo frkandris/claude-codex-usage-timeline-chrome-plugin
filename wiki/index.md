@@ -27,11 +27,11 @@ New here? Read [[architecture]] first, then the schema in `CLAUDE.md` (how this 
 - [[chatgpt-codex-usage-api]] — undocumented `chatgpt.com` usage endpoint, JWT account-id, headers.
 
 ### Getting things done — `workflows/` · `runbooks/`
-- [[development-and-testing]] · [[loading-and-reloading-the-extension]]
+- [[development-and-testing]] · [[loading-and-reloading-the-extension]] · [[publishing-to-the-chrome-web-store]]
 - [[fable-or-metric-shows-no-data]] · [[provider-shows-sign-in-or-error]]
 
 ### Reasoning trail — `decisions/` · `bugs/` · `tech-debt/` · `hacks/`
-- Decisions: [[2026-07-21-limits-array-for-fable]] · [[2026-07-15-direct-fetch-then-background-tab-fallback]]
+- Decisions: [[2026-07-27-store-listing-positioning]] · [[2026-07-21-limits-array-for-fable]] · [[2026-07-15-direct-fetch-then-background-tab-fallback]]
 - Bugs: [[2026-07-21-fable-no-data-limits-array]]
 - See each folder's `_index.md` for the full Active/Resolved split.
 

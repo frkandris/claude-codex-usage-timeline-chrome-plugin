@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Usage Timeline — Claude &amp; Codex usage limits over time</title>
+<meta name="description" content="A Chrome extension that samples your Claude and Codex usage limits and draws them on one local timeline with a trend forecast.">
+<link rel="icon" href="icon-128.png">
+<link rel="stylesheet" href="_shared.css">
+<style>
+  .hero-shot { width: 100%; border: 1px solid var(--line); border-radius: 10px; margin: 28px 0 8px; display: block; }
+  ul.features { padding-left: 20px; }
+  ul.features li { margin-bottom: 7px; }
+</style>
+</head>
+<body>
+<main>
+  <header class="site">
+    <img src="icon-128.png" alt="">
+    <b>AI Usage Timeline</b>
+  </header>
+
+  <h1>Claude and Codex limits on one timeline</h1>
+  <p class="updated">A Chrome extension. Everything stays on your device.</p>
+
+  <img class="hero-shot" src="screenshot-timeline.png"
+       alt="The extension dashboard showing Claude and Codex usage limits plotted over 24 hours.">
+
+  <h2>What it does</h2>
+  <ul class="features">
+    <li>Samples your Claude and Codex usage-limit utilization every 5–60 minutes.</li>
+    <li>Draws the 5-hour and weekly windows of both services on one shared chart.</li>
+    <li>Projects a trend forecast: where each limit lands by the time it resets.</li>
+    <li>Shows the number you care about on the toolbar badge.</li>
+    <li>Keeps up to 90 days of history locally, exportable as CSV and erasable at any time.</li>
+  </ul>
+
+  <h2>Privacy</h2>
+  <p>No server, no account, no analytics. The extension reads only usage percentages and reset
+  timestamps, never your conversations or keys. See the
+  <a href="privacy.html">privacy policy</a>.</p>
+
+  <h2>Source</h2>
+  <p>The extension is open source:
+  <a href="https://github.com/frkandris/claude-codex-usage-timeline-chrome-plugin">github.com/frkandris/claude-codex-usage-timeline-chrome-plugin</a>.</p>
+
+  <footer>
+    AI Usage Timeline is an independent, unofficial tool. It is not affiliated with, endorsed by or
+    sponsored by Anthropic (Claude) or OpenAI (Codex, ChatGPT). All trademarks belong to their
+    respective owners.
+  </footer>
+</main>
+</body>
+</html>

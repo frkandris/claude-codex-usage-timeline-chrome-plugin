@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy Policy · AI Usage Timeline</title>
+<meta name="description" content="Privacy policy for the AI Usage Timeline Chrome extension. All data stays on your device.">
+<link rel="icon" href="icon-128.png">
+<link rel="stylesheet" href="_shared.css">
+</head>
+<body>
+<main>
+  <header class="site">
+    <img src="icon-128.png" alt="">
+    <b>AI Usage Timeline</b>
+  </header>
+
+  <h1>Privacy Policy</h1>
+  <p class="updated">Last updated: 27 July 2026</p>
+
+  <div class="callout">
+    <p><strong>The short version.</strong> The extension stores everything it measures on your own
+    computer. It has no server, no account, no analytics and no third-party services. No data is
+    ever transmitted to the developer or to anyone else.</p>
+  </div>
+
+  <h2>What the extension reads</h2>
+  <p>While you are signed in to the services in the same Chrome profile, the extension periodically
+  requests the same internal usage endpoints that the web apps themselves use:</p>
+  <ul>
+    <li><code>https://claude.ai</code> — your organization id and your usage-limit utilization
+        (5-hour window, weekly window, and the per-model weekly window when present).</li>
+    <li><code>https://chatgpt.com</code> — your account id and your Codex usage-limit utilization
+        (5-hour window and weekly window when present).</li>
+  </ul>
+  <p>From those responses it keeps only two kinds of numbers: a <strong>percentage</strong> (0–100)
+  of the limit consumed, and the <strong>timestamp</strong> at which that limit resets.</p>
+  <p>The extension does <strong>not</strong> read, store or transmit your conversations, prompts,
+  completions, files, API keys, passwords, or the contents of any other website.</p>
+
+  <h2>What is stored, and where</h2>
+  <p>All measurements and settings are written to <code>chrome.storage.local</code>, which lives in
+  your Chrome profile on your device. Measurements older than <strong>90 days</strong> are deleted
+  automatically.</p>
+  <p>Nothing is uploaded. The only network requests the extension makes are to
+  <code>claude.ai</code> and <code>chatgpt.com</code>, authenticated with the session cookies
+  already present in your browser — exactly as if you had opened those pages yourself.</p>
+  <p>If a background request cannot use your session, the extension briefly opens an inactive tab on
+  the provider's own site, reads the same usage JSON there, and closes the tab again.</p>
+
+  <h2>Permissions and why they are needed</h2>
+  <table>
+    <tr><th>Permission</th><th>Why</th></tr>
+    <tr><td><code>alarms</code></td><td>Schedule the periodic measurement (every 5–60 minutes, your choice).</td></tr>
+    <tr><td><code>storage</code></td><td>Keep the measurement history and your settings locally.</td></tr>
+    <tr><td><code>tabs</code></td><td>Open and close the temporary fallback tab described above.</td></tr>
+    <tr><td><code>scripting</code></td><td>Run the usage request inside that fallback tab.</td></tr>
+    <tr><td><code>claude.ai</code>, <code>chatgpt.com</code> host access</td><td>Read the usage endpoints of those two services.</td></tr>
+  </table>
+
+  <h2>Your control over the data</h2>
+  <ul>
+    <li><strong>Export CSV</strong> on the settings page writes the full history to a file you choose.</li>
+    <li><strong>Clear history</strong> on the settings page deletes every stored measurement immediately.</li>
+    <li>Disabling either service stops all requests to it.</li>
+    <li>Uninstalling the extension removes all stored data with the Chrome profile data.</li>
+  </ul>
+
+  <h2>Data sharing and sale</h2>
+  <p>The developer does not collect, receive, sell, rent or share any user data. There is nothing to
+  share — the data never leaves your machine.</p>
+
+  <h2>Changes to this policy</h2>
+  <p>Any change will be published on this page with a new “Last updated” date.</p>
+
+  <h2>Contact</h2>
+  <p>Questions or reports: <a href="mailto:office@strt.hu">office@strt.hu</a>, or open an issue on
+  <a href="https://github.com/frkandris/claude-codex-usage-timeline-chrome-plugin/issues">GitHub</a>.</p>
+
+  <footer>
+    AI Usage Timeline is an independent, unofficial tool. It is not affiliated with, endorsed by or
+    sponsored by Anthropic (Claude) or OpenAI (Codex, ChatGPT). All trademarks belong to their
+    respective owners.
+  </footer>
+</main>
+</body>
+</html>
