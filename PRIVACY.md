@@ -68,7 +68,7 @@ public repository.
 
 ## Contact
 
-Questions or reports: **office@strt.hu**, or open an issue at
+Questions or reports: **andris@strt.hu**, or open an issue at
 <https://github.com/frkandris/claude-codex-usage-timeline-chrome-plugin/issues>.
 
 ## Not affiliated
