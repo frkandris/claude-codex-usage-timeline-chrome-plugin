@@ -42,6 +42,10 @@ POST https://www.googleapis.com/chromewebstore/v1.1/items/<id>/publish    → st
 
 Anything else in `status` fails the job. `ITEM_PENDING_REVIEW` is a success — review takes days.
 
+**First automated submission: v1.0.1 on 2026-07-31** (run 30659104678, 22 s end to end,
+`uploadState: SUCCESS` → `status: OK`). The first attempt that day skipped the store step because the
+secrets had been created empty — see the piping note in the setup steps below.
+
 ## One-time credential setup
 
 Same Google Cloud recipe as `strt-chrome-extension`; if that project's OAuth client belongs to the
