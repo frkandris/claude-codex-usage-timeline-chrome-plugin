@@ -103,12 +103,18 @@ jobs:
           CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
           CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
         run: |
-          if [ -n "$CWS_EXTENSION_ID" ] && [ -n "$CWS_CLIENT_ID" ] \
-             && [ -n "$CWS_CLIENT_SECRET" ] && [ -n "$CWS_REFRESH_TOKEN" ]; then
+          # Name what is missing: a secret set without a value exists but is empty, which is
+          # indistinguishable from "not set" here and otherwise sends you hunting.
+          MISSING=""
+          [ -n "$CWS_EXTENSION_ID" ] || MISSING="$MISSING CWS_EXTENSION_ID(variable)"
+          [ -n "$CWS_CLIENT_ID" ] || MISSING="$MISSING CWS_CLIENT_ID"
+          [ -n "$CWS_CLIENT_SECRET" ] || MISSING="$MISSING CWS_CLIENT_SECRET"
+          [ -n "$CWS_REFRESH_TOKEN" ] || MISSING="$MISSING CWS_REFRESH_TOKEN"
+          if [ -z "$MISSING" ]; then
             echo "configured=true" >> "$GITHUB_OUTPUT"
           else
             echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Chrome Web Store credentials not configured — skipping upload. See wiki/integrations/chrome-web-store.md"
+            echo "::warning::Chrome Web Store upload skipped — empty or unset:$MISSING. See wiki/integrations/chrome-web-store.md"
           fi
 
       - name: Upload to Chrome Web Store and publish

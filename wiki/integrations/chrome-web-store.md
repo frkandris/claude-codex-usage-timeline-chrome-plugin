@@ -57,8 +57,18 @@ same publisher account, **its client id / secret / refresh token work here too**
    `https://accounts.google.com/o/oauth2/auth?response_type=code&scope=https://www.googleapis.com/auth/chromewebstore&client_id=<CLIENT_ID>&redirect_uri=http://localhost&access_type=offline&prompt=consent`,
    approve as the publisher, copy the `code=` value from the localhost redirect, then exchange it:
    `curl -d "client_id=<ID>" -d "client_secret=<SECRET>" -d "code=<CODE>" -d "grant_type=authorization_code" -d "redirect_uri=http://localhost" https://oauth2.googleapis.com/token`
-5. Store them on this repo: `gh secret set CWS_CLIENT_ID` / `CWS_CLIENT_SECRET` / `CWS_REFRESH_TOKEN`
-   and `gh variable set CWS_EXTENSION_ID`.
+5. Store them on this repo — **pipe the value in**, because `gh secret set NAME` with nothing on
+   stdin silently creates an *empty* secret, and an empty secret looks exactly like an unset one
+   (this cost the first automated run on 2026-07-31):
+
+   ```bash
+   printf %s '<value>' | gh secret set CWS_CLIENT_ID
+   printf %s '<value>' | gh secret set CWS_CLIENT_SECRET
+   printf %s '<value>' | gh secret set CWS_REFRESH_TOKEN
+   gh variable set CWS_EXTENSION_ID --body '<item id>'
+   ```
+
+   The workflow's credential check names which one is empty, so the job log tells you what to fix.
 
 The OAuth account must have access to **this** item — with a group publisher, be a member of it.
 
