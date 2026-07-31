@@ -4,7 +4,7 @@ title: chatgpt.com Codex usage API
 description: Undocumented internal endpoints the extension reads for Codex/ChatGPT usage, plus auth details.
 resource: https://chatgpt.com/backend-api/wham/usage
 tags: [codex, chatgpt, integration, undocumented-api]
-timestamp: 2026-07-21
+timestamp: 2026-07-31
 ---
 
 # chatgpt.com Codex usage API
@@ -13,9 +13,29 @@ timestamp: 2026-07-21
 token** plus an account header. Consumed by `collectCodexDirect` (`background.js:31`) and the in-page
 fallback (`background.js:75`); parsed by `parseCodexUsage` (`lib/usage.js:66`).
 
-> Provenance note: the endpoints, headers, and field mappings below are documented from the
-> **source code** at the initial commit — this shape was not re-captured live in the bootstrap
-> session. Re-capture and update the observation date when convenient (see bottom).
+> Provenance: response shape below captured **live on 2026-07-31** (team plan, page console). The
+> auth flow and the tolerant field fallbacks are documented from the source code at the initial commit.
+
+## Observed response (2026-07-31, `plan_type: "team"`)
+
+```json
+{
+  "user_id": "user-…", "account_id": "…", "email": "…", "plan_type": "team",
+  "rate_limit": {
+    "allowed": true, "limit_reached": false,
+    "primary_window": { "used_percent": 2, "limit_window_seconds": 604800,
+                        "reset_after_seconds": 431811, "reset_at": 1785936346 },
+    "secondary_window": null
+  },
+  "code_review_rate_limit": null, "additional_rate_limits": null,
+  "credits": { "has_credits": false, "unlimited": false, "overage_limit_reached": false, "balance": null },
+  "spend_control": { "reached": false, "individual_limit": null },
+  "rate_limit_reached_type": null, "promo": null,
+  "rate_limit_reset_credits": { "available_count": 3, "applicable_available_count": 0 }
+}
+```
+
+**`reset_at` is Unix seconds**, handled by `resetTime()`'s `< 1e12` → `× 1000` branch (`lib/usage.js:19`).
 
 ## Flow
 
@@ -37,14 +57,31 @@ The response is tolerant to several nestings. Effective limits object is the fir
 `rate_limit` / `rateLimit` / a `rate_limits[]` entry (preferring `limit_id === "codex"`, else the
 first) / the payload itself.
 
-| Wiki metric | Source window | Field read |
-|-------------|---------------|------------|
-| `session` | `primary_window` / `primaryWindow` / `primary` / `five_hour` / `session` | `used_percent` (via `metric()`) |
-| `weekly` | `secondary_window` / `secondaryWindow` / `secondary` / `seven_day` / `weekly` | `used_percent` |
+Two candidate windows are picked up positionally first:
 
-A missing weekly window is allowed (stays `null`) — the Codex card hides its weekly row until a finite
-value exists (`dashboard/dashboard.js:341`). If neither window resolves, it throws *"The Codex usage
-format is not recognized."*
+| Candidate | Keys tried |
+|-----------|------------|
+| primary | `primary_window` / `primaryWindow` / `primary` / `five_hour` / `session` |
+| secondary | `secondary_window` / `secondaryWindow` / `secondary` / `seven_day` / `weekly` |
+
+…and then **classified by declared window length**, which overrides the position: a window declaring
+`limit_window_seconds` (also `limitWindowSeconds` / `window_seconds` / `windowSeconds`, plus the
+`*_minutes` variants) of **≤ 24 h becomes `session`**, **> 24 h becomes `weekly`**. Windows that
+declare no length keep the positional mapping. The percentage itself comes from `used_percent` via
+`metric()`.
+
+**Why:** on some plans (team, 2026-07-31) the account has *no* 5-hour window — the weekly limit is the
+one sitting in `primary_window`. Trusting the slot displayed a weekly reading under the "5 hours"
+label; see [[2026-07-31-codex-weekly-window-labelled-5h]].
+
+Either metric may be absent (stays `null`) — the Codex card hides the row and the chart series for a
+metric with no data, keeping the 5-hour row as the placeholder when neither has any
+(`dashboard/dashboard.js`, `render()`). If neither window resolves, it throws *"The Codex usage format
+is not recognized."*
+
+Samples stored before 2026-07-31 carry the old positional labels; `migrateCodexWindows`
+(`lib/usage.js`) relabels them on extension install/startup using the same 24 h rule applied to
+`resetsAt − timestamp`.
 
 ## Gotchas / non-obvious facts
 

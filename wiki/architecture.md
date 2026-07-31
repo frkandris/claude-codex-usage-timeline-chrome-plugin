@@ -65,11 +65,13 @@ This traces one metric through every layer. It is the template new features foll
 
 1. **Alarm → collect.** `collect-usage` fires → `collectUsage()` calls
    `collectProvider("claude", collectClaudeDirect)` (`background.js:157`).
-2. **Discover the org.** `collectClaudeDirect` (`background.js:19`) fetches
-   `https://claude.ai/api/organizations` (falling back to `/api/bootstrap`), then walks the JSON for an
-   organization id via `findOrganizationId` (`lib/usage.js:107`).
-3. **Fetch usage.** It fetches `https://claude.ai/api/organizations/<org>/usage` and passes the JSON to
-   `parseClaudeUsage` (`lib/usage.js:52`). See [[claude-ai-usage-api]] for the exact response shape.
+2. **Discover the orgs.** `collectClaudeDirect` fetches `https://claude.ai/api/organizations`
+   (falling back to `/api/bootstrap`), then collects the ranked candidate ids via
+   `findOrganizationIds` (`lib/usage.js`) — an account typically has several.
+3. **Fetch usage.** It fetches `https://claude.ai/api/organizations/<org>/usage` per candidate (the
+   cached `claudeOrganizationId` first) and passes each JSON to `parseClaudeUsage` (`lib/usage.js`),
+   keeping the first reading that `hasLiveUsage` accepts. See [[claude-ai-usage-api]] for the response
+   shape and [[claude-shows-zero-percent]] for why the candidate loop exists.
 4. **Parse Fable.** Fable is **not** a top-level key — it lives in the `limits[]` array as a
    `weekly_scoped` entry: `{ percent: 2, resets_at, scope: { model: { display_name: "Fable" } } }`.
    `findNamedMetric` (`lib/usage.js:34`) walks the tree, matches "Fable" via

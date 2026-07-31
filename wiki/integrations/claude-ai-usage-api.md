@@ -4,7 +4,7 @@ title: claude.ai usage API
 description: Undocumented internal endpoints the extension reads for Claude usage, with the live response shape.
 resource: https://claude.ai/api/organizations/{org}/usage
 tags: [claude, integration, undocumented-api]
-timestamp: 2026-07-21
+timestamp: 2026-07-31
 ---
 
 # claude.ai usage API
@@ -16,13 +16,27 @@ in-page fallback (`background.js:93`); parsed by `parseClaudeUsage` (`lib/usage.
 
 ## Flow
 
-1. **Discover the organization id.**
+1. **Discover the organization ids.**
    `GET https://claude.ai/api/organizations` → on failure fall back to
-   `GET https://claude.ai/api/bootstrap`. Walk the JSON for the org id with `findOrganizationId`
-   (`lib/usage.js:107`): it accepts keys `organization_id` / `organization_uuid` / `org_id`, an
-   `organization.uuid` object, and as a last resort the first `uuid` string it finds.
-2. **Fetch usage.**
-   `GET https://claude.ai/api/organizations/<org>/usage`.
+   `GET https://claude.ai/api/bootstrap`. `findOrganizationIds` (`lib/usage.js`) walks the JSON and
+   returns **up to 5 candidates**, best guess first: explicit `organization_id` / `organization_uuid` /
+   `org_id` / `organization.uuid` keys, then objects whose `capabilities` include `"chat"`, then any
+   remaining `uuid` string. (`findOrganizationId` is the single-value wrapper.)
+2. **Fetch usage, per candidate, until one reports real numbers.**
+   `GET https://claude.ai/api/organizations/<org>/usage`; keep the first parse that satisfies
+   `hasLiveUsage` (non-zero usage or any reset timestamp), and cache its org id under
+   `claudeOrganizationId` so later collections start there. Fall back to the first parseable
+   response if none looks live.
+
+**An account usually has more than one organization.** Observed 2026-07-31 on this project's account:
+
+| org | `capabilities` | `/usage` |
+|-----|----------------|----------|
+| `office@strt.hu's Organization` | `["chat", "claude_max"]` | 200 — `five_hour: 26`, `seven_day: 10` |
+| `Andris's Individual Org` | `["api", "api_individual"]` | **403** |
+
+Picking one blindly is a coin flip between real data, a 403 ("Sign in" pill), and a well-formed
+all-zero response that silently plots as 0% — see [[claude-shows-zero-percent]].
 
 ## Live response shape — observed 2026-07-20/21 (Max 20× plan)
 

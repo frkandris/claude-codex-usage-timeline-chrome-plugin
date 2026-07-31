@@ -2,6 +2,10 @@
 
 Append-only, newest first. One self-contained line per entry.
 
+## 2026-07-31
+* Claude org discovery now returns up to 5 ranked candidates (`findOrganizationIds`) and collection keeps the first whose usage is live (`hasLiveUsage`), caching the winner as `claudeOrganizationId`; both the direct and background-tab paths read every candidate. Triggered by a Team-plan report where every Claude row read 0%/"No reset"; live check found this account also has two orgs (`chat`+`claude_max` → 200 with data, `api`+`api_individual` → 403). New runbook [[claude-shows-zero-percent]]; [[claude-ai-usage-api]] flow section rewritten with the observed org table (2026-07-31). Tests: 27 → 30.
+* Codex windows are now classified by declared length (`limit_window_seconds` ≤ 24 h → `session`, > 24 h → `weekly`) instead of by payload position, plus `migrateCodexWindows` for already-stored samples and optional 5-hour row/legend/badge target. Postmortem [[2026-07-31-codex-weekly-window-labelled-5h]]; refreshed [[chatgpt-codex-usage-api]] with a live 2026-07-31 team-plan capture (`primary_window.limit_window_seconds: 604800`, `secondary_window: null`) and updated `glossary` (session, weekly). Source: live `/backend-api/wham/usage` capture + chatgpt.com Analytics screenshot. Tests: 23 → 27.
+
 ## 2026-07-27
 * Prepared the first Chrome Web Store submission (v1.0.0): added [[publishing-to-the-chrome-web-store]] (package script, manifest-driven store metadata, screenshot harness) and [[2026-07-27-store-listing-positioning]] (why the name carries "Claude & Codex", why screenshots use seeded data, why the policy is on GitHub Pages). Source: this session's `scripts/package.sh`, `store/`, `docs/`, and the `manifest.json` name/description/homepage_url/minimum_chrome_version edit.
 

@@ -1,7 +1,9 @@
 import {
   appendSample,
   extractChatGptAccountId,
-  findOrganizationId,
+  findOrganizationIds,
+  hasLiveUsage,
+  migrateCodexWindows,
   parseClaudeUsage,
   parseCodexUsage
 } from "./lib/usage.js";
@@ -16,6 +18,26 @@ async function fetchJson(url, options = {}) {
   return response.json();
 }
 
+// Prefer the first organization that reports real usage; a personal organization sitting next to a
+// team one answers with all-zero limits and would otherwise be reported as "0%".
+function selectClaudeUsage(payloads) {
+  let fallback = null;
+  let lastError = null;
+  for (const payload of payloads) {
+    let parsed;
+    try {
+      parsed = parseClaudeUsage(payload);
+    } catch (error) {
+      lastError = error;
+      continue;
+    }
+    if (hasLiveUsage(parsed)) return parsed;
+    fallback ??= parsed;
+  }
+  if (fallback) return fallback;
+  throw lastError ?? new Error("The Claude usage format is not recognized.");
+}
+
 async function collectClaudeDirect() {
   let organizationData;
   try {
@@ -23,9 +45,35 @@ async function collectClaudeDirect() {
   } catch {
     organizationData = await fetchJson("https://claude.ai/api/bootstrap");
   }
-  const organizationId = findOrganizationId(organizationData);
-  if (!organizationId) throw new Error("Claude organization ID not found.");
-  return parseClaudeUsage(await fetchJson(`https://claude.ai/api/organizations/${organizationId}/usage`));
+  const organizationIds = findOrganizationIds(organizationData);
+  if (!organizationIds.length) throw new Error("Claude organization ID not found.");
+  const { claudeOrganizationId } = await chrome.storage.local.get(["claudeOrganizationId"]);
+  const ordered = organizationIds.includes(claudeOrganizationId)
+    ? [claudeOrganizationId, ...organizationIds.filter((id) => id !== claudeOrganizationId)]
+    : organizationIds;
+  const payloads = [];
+  let lastError = null;
+  for (const organizationId of ordered) {
+    let payload;
+    try {
+      payload = await fetchJson(`https://claude.ai/api/organizations/${organizationId}/usage`);
+    } catch (error) {
+      lastError = error;
+      continue;
+    }
+    payloads.push(payload);
+    let parsed;
+    try {
+      parsed = parseClaudeUsage(payload);
+    } catch {
+      continue;
+    }
+    if (!hasLiveUsage(parsed)) continue;
+    if (claudeOrganizationId !== organizationId) await chrome.storage.local.set({ claudeOrganizationId: organizationId });
+    return parsed;
+  }
+  if (!payloads.length) throw lastError ?? new Error("Claude usage could not be read.");
+  return selectClaudeUsage(payloads);
 }
 
 async function collectCodexDirect() {
@@ -94,18 +142,29 @@ async function collectInBackgroundTab(provider) {
         try { organizations = await read("/api/organizations"); }
         catch { organizations = await read("/api/bootstrap"); }
         const queue = Array.isArray(organizations) ? [...organizations] : [organizations];
-        let id = null;
-        while (queue.length && !id) {
+        const explicitIds = []; const chatOrganizationIds = []; const fallbackIds = [];
+        while (queue.length) {
           const item = queue.shift();
           if (!item || typeof item !== "object") continue;
-          id = item.organization_id || item.organization_uuid || item.org_id || item.organization?.uuid || item.uuid || null;
+          const explicit = item.organization_id || item.organization_uuid || item.org_id || item.organization?.uuid;
+          if (typeof explicit === "string") explicitIds.push(explicit);
+          if (typeof item.uuid === "string") {
+            (Array.isArray(item.capabilities) && item.capabilities.includes("chat") ? chatOrganizationIds : fallbackIds).push(item.uuid);
+          }
           Object.values(item).forEach((value) => value && typeof value === "object" && queue.push(value));
         }
-        if (!id) throw new Error("Claude organization ID not found.");
-        return read(`/api/organizations/${id}/usage`);
+        const ids = [...new Set([...explicitIds, ...chatOrganizationIds, ...fallbackIds])].slice(0, 5);
+        if (!ids.length) throw new Error("Claude organization ID not found.");
+        // Every organization is read; the service worker picks the one that reports real usage.
+        const payloads = [];
+        for (const id of ids) {
+          try { payloads.push(await read(`/api/organizations/${id}/usage`)); } catch { /* Try the next organization. */ }
+        }
+        if (!payloads.length) throw new Error("Claude usage could not be read for any organization.");
+        return payloads;
       }
     });
-    return isClaude ? parseClaudeUsage(result) : parseCodexUsage(result);
+    return isClaude ? selectClaudeUsage(Array.isArray(result) ? result : [result]) : parseCodexUsage(result);
   } finally {
     if (tab?.id) await chrome.tabs.remove(tab.id).catch(() => {});
   }
@@ -181,6 +240,18 @@ async function collectUsage() {
   return { sample, status: { claude, codex } };
 }
 
+async function migrateStoredHistory() {
+  const { history, badgeTarget } = await chrome.storage.local.get(["history", "badgeTarget"]);
+  const migrated = migrateCodexWindows(history);
+  if (migrated === history) return;
+  await chrome.storage.local.set({ history: migrated });
+  // A badge pointing at the now-empty Codex 5-hour metric would render "!" forever.
+  const latestCodex = [...migrated].reverse().find((sample) => sample?.codex)?.codex;
+  if (badgeTarget === "codex-session" && !Number.isFinite(latestCodex?.session?.used) && Number.isFinite(latestCodex?.weekly?.used)) {
+    await chrome.storage.local.set({ badgeTarget: "codex-weekly" });
+  }
+}
+
 async function scheduleAlarm(intervalMinutes, delayInMinutes = intervalMinutes) {
   await chrome.alarms.clear(ALARM_NAME);
   await chrome.alarms.create(ALARM_NAME, { delayInMinutes, periodInMinutes: intervalMinutes });
@@ -245,4 +316,5 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   return false;
 });
 
+migrateStoredHistory();
 ensureAlarm();

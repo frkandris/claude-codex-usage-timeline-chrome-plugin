@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { appendSample, extractChatGptAccountId, findOrganizationId, parseClaudeUsage, parseCodexUsage, projectUsage, removeMeasurement } from "../lib/usage.js";
+import { appendSample, extractChatGptAccountId, findOrganizationId, findOrganizationIds, hasLiveUsage, migrateCodexWindows, parseClaudeUsage, parseCodexUsage, projectUsage, removeMeasurement } from "../lib/usage.js";
 
 test("parses Claude session and weekly utilization", () => {
   const result = parseClaudeUsage({
@@ -60,6 +60,48 @@ test("parses Codex multi-limit payloads", () => {
   assert.equal(result.session.used, 21); assert.equal(result.weekly.used, 47);
 });
 
+test("reads a weekly-only Codex payload as weekly, not as a 5-hour window", () => {
+  const result = parseCodexUsage({
+    rate_limit: {
+      primary_window: { used_percent: 2, limit_window_seconds: 604800, reset_at: 1785936346 },
+      secondary_window: null
+    }
+  });
+  assert.equal(result.session.used, null);
+  assert.equal(result.weekly.used, 2);
+  assert.equal(result.weekly.resetsAt, 1785936346 * 1000);
+});
+
+test("classifies Codex windows by declared length regardless of position", () => {
+  const result = parseCodexUsage({
+    rate_limit: {
+      primary_window: { used_percent: 55, limit_window_seconds: 604800 },
+      secondary_window: { used_percent: 9, limit_window_seconds: 18000 }
+    }
+  });
+  assert.equal(result.session.used, 9); assert.equal(result.weekly.used, 55);
+});
+
+test("moves stored Codex weekly readings out of the 5-hour metric", () => {
+  const timestamp = Date.parse("2026-07-30T12:00:00Z");
+  const weeklyReset = timestamp + 5 * 24 * 60 * 60 * 1000;
+  const sessionReset = timestamp + 3 * 60 * 60 * 1000;
+  const history = [
+    { timestamp, codex: { session: { used: 40, resetsAt: weeklyReset } } },
+    { timestamp, codex: { session: { used: 12, resetsAt: sessionReset } } }
+  ];
+  const result = migrateCodexWindows(history);
+  assert.equal(result[0].codex.weekly.used, 40);
+  assert.equal(result[0].codex.weekly.resetsAt, weeklyReset);
+  assert.equal(result[0].codex.session.used, null);
+  assert.deepEqual(result[1], history[1]);
+});
+
+test("leaves history untouched when no Codex reading needs relabelling", () => {
+  const history = [{ timestamp: 1, codex: { session: { used: 12, resetsAt: 2 } } }, { timestamp: 3, claude: null }];
+  assert.equal(migrateCodexWindows(history), history);
+});
+
 test("extracts the ChatGPT account ID from a session JWT", () => {
   const encode = (value) => Buffer.from(JSON.stringify(value)).toString("base64url");
   const accessToken = `${encode({ alg: "none" })}.${encode({ "https://api.openai.com/auth": { chatgpt_account_id: "account-123" } })}.signature`;
@@ -68,6 +110,28 @@ test("extracts the ChatGPT account ID from a session JWT", () => {
 
 test("finds an organization uuid in nested bootstrap data", () => {
   assert.equal(findOrganizationId({ account: { memberships: [{ organization: { uuid: "org-123" } }] } }), "org-123");
+});
+
+test("lists every candidate organization, chat-capable ones ahead of bare uuids", () => {
+  const organizations = [
+    { uuid: "org-personal", capabilities: ["chat", "claude_max"] },
+    { uuid: "org-api-only", capabilities: ["api"] },
+    { uuid: "org-team", capabilities: ["chat", "claude_team"] }
+  ];
+  assert.deepEqual(findOrganizationIds(organizations), ["org-personal", "org-team", "org-api-only"]);
+});
+
+test("caps the organization candidate list", () => {
+  const organizations = Array.from({ length: 9 }, (_, index) => ({ uuid: `org-${index}` }));
+  assert.equal(findOrganizationIds(organizations).length, 5);
+});
+
+test("treats all-zero limits without resets as no live usage", () => {
+  const empty = parseClaudeUsage({ five_hour: { utilization: 0 }, seven_day: { utilization: 0 } });
+  assert.equal(hasLiveUsage(empty), false);
+  const used = parseClaudeUsage({ five_hour: { utilization: 0, resets_at: "2026-07-31T18:00:00Z" }, seven_day: { utilization: 0 } });
+  assert.equal(hasLiveUsage(used), true);
+  assert.equal(hasLiveUsage(parseClaudeUsage({ five_hour: { utilization: 12 } })), true);
 });
 
 test("retains ordered recent samples", () => {

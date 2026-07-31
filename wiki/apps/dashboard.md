@@ -15,9 +15,10 @@ The primary UI, opened by clicking the toolbar icon. `dashboard/index.html` +
 
 ## Structure
 
-- **Overview cards** — one per provider, each with `session` / `weekly` (+ Claude `fable`, + Codex
-  `weekly` optional) as value + progress bar + reset label, and a status pill.
-  `renderProvider` (`dashboard/dashboard.js:104`).
+- **Overview cards** — one per provider, each with `session` / `weekly` (+ Claude `fable` optional,
+  + **both** Codex rows optional) as value + progress bar + reset label, and a status pill.
+  `renderProvider` (`dashboard/dashboard.js:104`). The Codex 5-hour row doubles as the placeholder
+  when neither Codex metric has data ([[2026-07-31-codex-weekly-window-labelled-5h]]).
 - **Timeline chart** — a raw `<canvas>` drawn by `drawChart` (`dashboard/dashboard.js:133`). No chart
   library. See [[timeline-chart]].
 - **Range select** — 30 min … 30 days … All (`dashboard/index.html:51`); persisted as `selectedRange`.
@@ -25,8 +26,8 @@ The primary UI, opened by clicking the toolbar icon. `dashboard/index.html` +
 
 ## Series (`dashboard/dashboard.js:28`)
 
-`claude:session`, `claude:weekly`, `claude:fable` (optional), `codex:session`, `codex:weekly`
-(optional). Each has a dash pattern. Optional series appear only when `hasCurrentMetric` is true
+`claude:session`, `claude:weekly`, `claude:fable` (optional), `codex:session` (optional),
+`codex:weekly` (optional). Each has a dash pattern. Optional series appear only when `hasCurrentMetric` is true
 (`dashboard/dashboard.js:35,100`).
 
 ## Interactions

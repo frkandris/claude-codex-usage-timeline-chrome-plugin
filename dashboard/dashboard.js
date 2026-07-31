@@ -29,7 +29,7 @@ const series = [
   { provider: "claude", metric: "session", label: "Claude 5h", dash: [] },
   { provider: "claude", metric: "weekly", label: "Claude week", dash: [10, 7] },
   { provider: "claude", metric: "fable", label: "Claude Fable", dash: [8, 4, 2, 4], optional: true },
-  { provider: "codex", metric: "session", label: "Codex 5h", dash: [] },
+  { provider: "codex", metric: "session", label: "Codex 5h", dash: [], optional: true },
   { provider: "codex", metric: "weekly", label: "Codex week", dash: [10, 7], optional: true }
 ];
 const activeSeries = () => series.filter((item) => state.providers[item.provider] && (!item.optional || hasCurrentMetric(item.provider, item.metric)));
@@ -337,10 +337,15 @@ function render() {
   });
   const hasClaudeFable = hasCurrentMetric("claude", "fable");
   const hasCodexWeekly = hasCurrentMetric("codex", "weekly");
+  // Plans without a 5-hour Codex window report only a weekly one; keep the 5-hour row as the
+  // placeholder when neither metric has data yet, so the card never renders empty.
+  const hasCodexSession = hasCurrentMetric("codex", "session") || !hasCodexWeekly;
   $("claudeFableLegend").hidden = !state.providers.claude || !hasClaudeFable;
+  $("codexSessionMetric").hidden = !hasCodexSession;
+  $("codexSessionLegend").hidden = !state.providers.codex || !hasCurrentMetric("codex", "session");
   $("codexWeeklyMetric").hidden = !hasCodexWeekly;
   $("codexWeeklyLegend").hidden = !state.providers.codex || !hasCodexWeekly;
-  document.querySelector(".codex-provider .metrics").classList.toggle("single-metric", !hasCodexWeekly);
+  document.querySelector(".codex-provider .metrics").classList.toggle("single-metric", !hasCodexSession || !hasCodexWeekly);
   $("projectionLegend").hidden = !state.showProjection;
   renderProvider("claude"); renderProvider("codex"); drawChart();
 }

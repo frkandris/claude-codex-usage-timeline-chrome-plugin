@@ -20,11 +20,13 @@ Terms as they are used in this codebase. Code references are against the initial
 - **`resetsAt`.** Epoch-ms timestamp when a limit window resets, or `null`. Parsed by `resetTime()`
   (`lib/usage.js:15`) from `resets_at` / `reset_at` / `resetAt` (absolute) or `reset_after_seconds`
   (relative). Shown as "Resets <date>" or "No reset".
-- **Session / 5-hour window.** Claude's `five_hour` limit; Codex's `primary_window`. The short rolling
-  quota. Metric key: `session`.
-- **Weekly / 7-day window.** Claude's `seven_day` (all models); Codex's `secondary_window`. Metric key:
-  `weekly`. On the Codex card the weekly row is hidden until a finite value exists
-  (`dashboard/dashboard.js:341`).
+- **Session / 5-hour window.** Claude's `five_hour` limit; for Codex, any window declaring
+  `limit_window_seconds ≤ 24 h`. The short rolling quota. Metric key: `session`. Not every Codex plan
+  has one — see [[2026-07-31-codex-weekly-window-labelled-5h]].
+- **Weekly / 7-day window.** Claude's `seven_day` (all models); for Codex, any window declaring
+  `limit_window_seconds > 24 h` — which on some plans is `primary_window`, not `secondary_window`.
+  Metric key: `weekly`. Each Codex row is hidden until a finite value exists (`dashboard/dashboard.js`,
+  `render()`).
 - **Fable.** A Claude model whose usage counts against a **separate weekly, model-scoped limit** on
   the Max plan. In the `claude.ai` API it appears inside `limits[]` as a `weekly_scoped` entry with
   `scope.model.display_name == "Fable"` (not as a top-level key). Metric key: `fable`; Claude-only,

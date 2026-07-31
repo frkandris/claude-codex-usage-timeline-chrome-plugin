@@ -29,7 +29,9 @@ The stored `error` string combines the tab-fallback error and the direct error
   [[fable-or-metric-shows-no-data]] step 4 and update the integration page + parser.
 - **HTTP 4xx/5xx** → provider-side/outage; retry later.
 - **"organization ID not found"** → the org-discovery walk failed; re-capture
-  `/api/organizations` (or `/api/bootstrap`) and check `findOrganizationId` (`lib/usage.js:107`).
+  `/api/organizations` (or `/api/bootstrap`) and check `findOrganizationIds` (`lib/usage.js`).
+- **All rows read `0%` with "No reset"** (no error at all) → likely the wrong organization; see
+  [[claude-shows-zero-percent]].
 - **background-tab timeout** ("The background page timed out.") → the fallback tab didn't reach
   `complete` within 20s (`waitForTab`, `background.js:41`); usually transient.
 

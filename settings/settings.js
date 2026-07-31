@@ -14,7 +14,7 @@ const exportButton = document.getElementById("exportButton");
 const clearButton = document.getElementById("clearButton");
 const ALARM_NAME = "collect-usage";
 let statusTimer;
-let codexWeeklyAvailable = false;
+const codexMetricsAvailable = { session: true, weekly: false };
 
 async function loadSettings() {
   const stored = await chrome.storage.local.get([
@@ -28,7 +28,10 @@ async function loadSettings() {
   ]);
   const providerSettings = normalizeProviderSettings(stored);
   const latestCodex = [...(stored.history ?? [])].reverse().find((sample) => sample?.codex)?.codex;
-  codexWeeklyAvailable = Number.isFinite(latestCodex?.weekly?.used);
+  codexMetricsAvailable.weekly = Number.isFinite(latestCodex?.weekly?.used);
+  // Plans without a 5-hour Codex window only report a weekly one; keep the 5-hour target offered
+  // while no Codex data exists at all.
+  codexMetricsAvailable.session = Number.isFinite(latestCodex?.session?.used) || !codexMetricsAvailable.weekly;
   intervalSelect.value = String(normalizeRefreshInterval(stored.refreshIntervalMinutes));
   claudeEnabled.checked = providerSettings.providers.claude;
   codexEnabled.checked = providerSettings.providers.codex;
@@ -43,12 +46,14 @@ async function loadSettings() {
 
 function syncBadgeOptions() {
   badgeTarget.querySelectorAll("option[data-provider]").forEach((option) => {
-    const unavailableMetric = option.value === "codex-weekly" && !codexWeeklyAvailable;
+    const unavailableMetric = option.dataset.provider === "codex"
+      && !codexMetricsAvailable[option.value.split("-")[1]];
     option.hidden = unavailableMetric;
     option.disabled = unavailableMetric || (option.dataset.provider === "claude" ? !claudeEnabled.checked : !codexEnabled.checked);
   });
   if (badgeTarget.selectedOptions[0]?.disabled) {
-    badgeTarget.value = claudeEnabled.checked ? "claude-session" : codexEnabled.checked ? "codex-session" : "none";
+    const codexFallback = codexMetricsAvailable.session ? "codex-session" : "codex-weekly";
+    badgeTarget.value = claudeEnabled.checked ? "claude-session" : codexEnabled.checked ? codexFallback : "none";
   }
 }
 

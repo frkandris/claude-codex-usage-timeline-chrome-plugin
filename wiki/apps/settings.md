@@ -16,9 +16,10 @@ gear. `settings/index.html` + `settings/settings.js` (149 lines) + `settings/set
 
 - **Refresh** — 5/10/15/30/60 min (`refreshInterval`). Persisted as `refreshIntervalMinutes`.
 - **Services** — `claudeEnabled` / `codexEnabled` checkboxes.
-- **Icon badge** — `badgeTarget` select; the `codex-weekly` option is hidden until Codex weekly data
-  exists (`codexWeeklyAvailable`, `settings/settings.js:31,45`), and options disable when their
-  provider is off.
+- **Icon badge** — `badgeTarget` select; each Codex option is hidden until that metric has data
+  (`codexMetricsAvailable`, `settings/settings.js`) — `codex-session` stays offered while there is no
+  Codex data at all, since plans differ in which windows they expose
+  ([[2026-07-31-codex-weekly-window-labelled-5h]]). Options disable when their provider is off.
 - **Trend forecast** — `showProjection` toggle. See [[trend-forecast]].
 - **Data** — **Export CSV** and **Clear history** (danger, with confirm). See
   [[data-export-and-retention]].
