@@ -9,7 +9,7 @@ timestamp: 2026-07-21
 
 ## Storage
 All samples live in `chrome.storage.local` under `history` (plus `status`, settings keys). Nothing
-leaves the browser; no server. See `README.md` ("Működés és adatvédelem") and [[architecture]].
+leaves the browser; no server. See `README.md` ("How it works, and privacy") and [[architecture]].
 
 ## Retention — 90 days
 `appendSample` (`lib/usage.js:123`) drops any sample older than `HISTORY_RETENTION_MS`

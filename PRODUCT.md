@@ -6,28 +6,35 @@ product
 
 ## Users
 
-Claude- és Codex-felhasználók, akik munka közben gyorsan szeretnék látni a használati kereteiket és azok időbeli változását, anélkül hogy külön szolgáltatói oldalakat kellene ellenőrizniük.
+Claude and Codex users who want to see their usage limits and how those change over time at a glance
+while working, without having to check the providers' own pages.
 
 ## Product Purpose
 
-A bővítmény helyben gyűjti és egy közös, áttekinthető idővonalon mutatja a Claude és Codex használati kereteit. A siker mércéje, hogy az aktuális állapot, a trend és a következő mérés egy pillantással érthető legyen.
+The extension collects Claude and Codex usage limits locally and shows them on one legible shared
+timeline. Success means the current state, the trend, and the next sample are understandable at a
+glance.
 
 ## Brand Personality
 
-Nyugodt, precíz, megbízható. A felület tárgyilagos és visszafogott, a figyelmet az adatokra és az egyértelmű állapotokra irányítja.
+Calm, precise, dependable. The interface is matter-of-fact and restrained, directing attention to the
+data and to unambiguous states.
 
 ## Anti-references
 
-Kerülendő a generikus SaaS-kártyarács, a túlzott dekoráció, a harsány gamifikáció, a terminálhatású sötét felület és minden olyan animáció, amely nem állapotváltozást közöl.
+Avoid the generic SaaS card grid, excessive decoration, loud gamification, terminal-styled dark
+surfaces, and any animation that does not communicate a change of state.
 
 ## Design Principles
 
-- Az aktuális állapot legyen egy pillantással érthető.
-- A beállítások használjanak ismert, kiszámítható vezérlőket.
-- A szolgáltatói színek adatjelentést hordozzanak, ne dekorációt.
-- A helyi adatkezelés és a következő automatikus művelet legyen látható.
-- A felület maradjon kompakt, de ne váljon zsúfolttá.
+- The current state should be understandable at a glance.
+- Settings should use familiar, predictable controls.
+- Provider colours should carry meaning about the data, not decoration.
+- Local data handling and the next automatic action should be visible.
+- The interface should stay compact without becoming crowded.
 
 ## Accessibility & Inclusion
 
-A felület legyen teljesen billentyűzettel kezelhető, használjon látható fókuszállapotokat, szemantikus címkéket, megfelelő kontrasztot és tartsa tiszteletben a csökkentett mozgás beállítását. Az információ ne csak színnel legyen közölve.
+The interface should be fully keyboard operable, use visible focus states, semantic labels and
+adequate contrast, and respect the reduced-motion preference. Information must never be conveyed by
+colour alone.

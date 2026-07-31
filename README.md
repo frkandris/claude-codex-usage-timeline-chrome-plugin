@@ -1,27 +1,50 @@
 # AI Usage Timeline
 
-Chrome Manifest V3 bővítmény, amely 15 percenként elmenti a Claude és a Codex rövid, illetve heti használati keretének kihasználtságát, majd idősoros grafikonon jeleníti meg.
+Chrome Manifest V3 extension that samples how much of your Claude and Codex usage limits you have
+spent, and draws the history on a shared time-series chart with trend forecasts.
 
-## Telepítés
+## Install
 
-1. Nyisd meg a `chrome://extensions` oldalt.
-2. Kapcsold be a **Fejlesztői módot**.
-3. Kattints a **Kicsomagolt bővítmény betöltése** gombra, majd válaszd ki ezt a könyvtárat.
-4. Jelentkezz be ugyanebben a Chrome-profilban a [claude.ai](https://claude.ai) és a [chatgpt.com](https://chatgpt.com) oldalakon.
-5. Kattints a bővítmény ikonjára a dashboard megnyitásához, majd az első kézi frissítéshez.
+1. Open `chrome://extensions`.
+2. Turn on **Developer mode**.
+3. Click **Load unpacked** and select this directory.
+4. Sign in to [claude.ai](https://claude.ai) and [chatgpt.com](https://chatgpt.com) in the same Chrome
+   profile.
+5. Click the extension icon to open the dashboard, then collect the first sample manually.
 
-Az automatikus mérés gyakorisága a dashboard fejlécében található **Beállítások** oldalon 5, 10, 15, 30 vagy 60 percre állítható. Ugyanitt külön kapcsolható a Claude és a Codex mérése, valamint kiválasztható, melyik rövid vagy heti érték jelenjen meg az ikon jelvényén.
+The sampling interval is configurable on the **Settings** page (from the dashboard header): 5, 10, 15,
+30 or 60 minutes, 15 by default. The same page toggles Claude and Codex collection independently and
+picks which metric the toolbar badge shows.
 
-## Működés és adatvédelem
+## Metrics
 
-- A bővítmény a két szolgáltatás webes felülete által használt, nem dokumentált belső usage végpontokat olvassa.
-- Ha a közvetlen háttérkérés nem kapja meg a munkamenet-cookie-t, rövid időre egy inaktív usage fület nyit, ugyanott olvassa ki a JSON adatot, majd bezárja a fület.
-- A bővítmény beszélgetéseket, promptokat és API-kulcsokat nem olvas.
-- Minden mérés a `chrome.storage.local` tárhelyen marad, legfeljebb 90 napig.
-- A belső végpontok változhatnak, ezért a bővítmény külön jelzi, ha valamelyik szolgáltatás formátuma már nem felismerhető.
+Which rows appear depends on what your plan exposes — a metric with no data is hidden rather than
+shown as zero.
 
-## Teszt
+- **Claude** — 5-hour session window, weekly (all models), and the weekly Fable limit.
+- **Codex** — the windows ChatGPT reports, classified by their declared length: up to 24 hours counts
+  as the 5-hour row, anything longer as the weekly row. Some plans have no 5-hour window at all.
+
+## How it works, and privacy
+
+- The extension reads the same undocumented internal usage endpoints that the two web apps use.
+- If the direct background request does not get the session cookie, it briefly opens an inactive tab
+  on the provider, reads the same JSON there, and closes the tab.
+- An account can belong to several organizations; for Claude the extension tries each candidate and
+  keeps the one that reports real usage.
+- It never reads conversations, prompts, or API keys.
+- Every sample stays in `chrome.storage.local` for at most 90 days. Export to CSV or clear the history
+  from the Settings page.
+- The internal endpoints change without notice, so the dashboard reports it explicitly when a
+  provider's response is no longer recognized.
+
+## Tests
 
 ```bash
 npm test
 ```
+
+## Project knowledge base
+
+`wiki/` documents the architecture, the two provider APIs, past bugs, and the runbooks. Start with
+`wiki/index.md`.

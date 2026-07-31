@@ -11,7 +11,7 @@ timestamp: 2026-07-21
 **Date recorded:** 2026-07-21 (documenting existing behavior; feature present since the initial
 commit, dated 2026-07-15 in `README.md`). **Status:** Adopted.
 
-> Provenance: rationale is stated in `README.md` ("Működés és adatvédelem") and evidenced by
+> Provenance: rationale is stated in `README.md` ("How it works, and privacy") and evidenced by
 > `collectProvider` (`background.js:114`). No design-note transcript exists for this project (the only
 > prior session transcript is unrelated), so the "why" is sourced from README + code.
 
