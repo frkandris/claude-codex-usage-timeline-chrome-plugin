@@ -97,6 +97,55 @@ test("moves stored Codex weekly readings out of the 5-hour metric", () => {
   assert.deepEqual(result[1], history[1]);
 });
 
+test("migrates weekly samples taken in the final hours before their reset", () => {
+  const weeklyReset = Date.parse("2026-08-05T13:25:00Z");
+  const history = [
+    { timestamp: weeklyReset - 5 * 24 * 60 * 60 * 1000, codex: { session: { used: 10, resetsAt: weeklyReset } } },
+    { timestamp: weeklyReset - 3 * 60 * 60 * 1000, codex: { session: { used: 44, resetsAt: weeklyReset } } }
+  ];
+  const result = migrateCodexWindows(history);
+  assert.equal(result[0].codex.weekly.used, 10);
+  assert.equal(result[1].codex.weekly.used, 44, "the sample three hours before reset belongs to the same weekly window");
+  assert.equal(result[1].codex.session.used, null);
+});
+
+test("uses an already-correct weekly sample to place legacy ones from the same window", () => {
+  const weeklyReset = Date.parse("2026-08-05T13:25:00Z");
+  const history = [
+    { timestamp: weeklyReset - 6 * 60 * 60 * 1000, codex: { session: { used: 51, resetsAt: weeklyReset } } },
+    { timestamp: weeklyReset - 1 * 60 * 60 * 1000, codex: { weekly: { used: 53, resetsAt: weeklyReset } } }
+  ];
+  const result = migrateCodexWindows(history);
+  assert.equal(result[0].codex.weekly.used, 51, "no legacy sample is far enough from the reset to self-identify");
+  assert.equal(result[0].codex.session.used, null);
+});
+
+test("swaps stored Codex metrics when both contradict their labels", () => {
+  const timestamp = Date.parse("2026-07-30T12:00:00Z");
+  const history = [{
+    timestamp,
+    codex: {
+      session: { used: 60, resetsAt: timestamp + 5 * 24 * 60 * 60 * 1000 },
+      weekly: { used: 15, resetsAt: timestamp + 2 * 60 * 60 * 1000 }
+    }
+  }];
+  const result = migrateCodexWindows(history);
+  assert.equal(result[0].codex.session.used, 15);
+  assert.equal(result[0].codex.weekly.used, 60);
+});
+
+test("leaves a plausible two-window sample alone", () => {
+  const timestamp = Date.parse("2026-07-30T12:00:00Z");
+  const history = [{
+    timestamp,
+    codex: {
+      session: { used: 15, resetsAt: timestamp + 2 * 60 * 60 * 1000 },
+      weekly: { used: 60, resetsAt: timestamp + 5 * 24 * 60 * 60 * 1000 }
+    }
+  }];
+  assert.equal(migrateCodexWindows(history), history);
+});
+
 test("leaves history untouched when no Codex reading needs relabelling", () => {
   const history = [{ timestamp: 1, codex: { session: { used: 12, resetsAt: 2 } } }, { timestamp: 3, claude: null }];
   assert.equal(migrateCodexWindows(history), history);

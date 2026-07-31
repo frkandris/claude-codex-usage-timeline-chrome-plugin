@@ -31,10 +31,18 @@ jobs:
         run: |
           set -euo pipefail
           VERSION=$(jq -r '.version' manifest.json)
-          if ! echo "$VERSION" | grep -qE '^[0-9]+(\.[0-9]+){1,3}$'; then
+          # Chrome's rules, not semver: 1-4 dot-separated integers, no leading zeros, each <= 65535.
+          # Anything else is rejected at upload — after the GitHub Release would already exist.
+          if ! echo "$VERSION" | grep -qE '^(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*)){0,3}$'; then
             echo "::error::manifest.json version is not a valid extension version: $VERSION"
             exit 1
           fi
+          for PART in ${VERSION//./ }; do
+            if [ "$PART" -gt 65535 ]; then
+              echo "::error::manifest.json version component $PART exceeds the extension maximum of 65535"
+              exit 1
+            fi
+          done
           NAME_LENGTH=$(jq -r '.name | length' manifest.json)
           if [ "$NAME_LENGTH" -gt 75 ]; then
             echo "::error::manifest.json name is $NAME_LENGTH characters, the Chrome Web Store limit is 75"
@@ -83,6 +91,7 @@ jobs:
           gh release create "v${{ steps.version.outputs.version }}" \
             "${{ steps.package.outputs.path }}" \
             --title "AI Usage Timeline v${{ steps.version.outputs.version }}" \
+            --target "${{ github.sha }}" \
             --notes-file release-body.md \
             --latest
         env:

@@ -53,7 +53,12 @@ function syncBadgeOptions() {
   });
   if (badgeTarget.selectedOptions[0]?.disabled) {
     const codexFallback = codexMetricsAvailable.session ? "codex-session" : "codex-weekly";
-    badgeTarget.value = claudeEnabled.checked ? "claude-session" : codexEnabled.checked ? codexFallback : "none";
+    // Someone who chose a Codex metric wants Codex; keeping their provider matters more than
+    // keeping the exact metric, so a plan without a 5-hour window falls back to Codex weekly.
+    const keepsCodex = badgeTarget.value.startsWith("codex") && codexEnabled.checked;
+    badgeTarget.value = keepsCodex ? codexFallback
+      : claudeEnabled.checked ? "claude-session"
+        : codexEnabled.checked ? codexFallback : "none";
   }
 }
 

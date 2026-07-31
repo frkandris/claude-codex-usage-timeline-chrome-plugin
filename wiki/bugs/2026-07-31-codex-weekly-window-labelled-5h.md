@@ -46,9 +46,17 @@ under a five-hour heading — which is why the two screenshots side by side surf
   declared, the old position-based mapping still applies, so payloads that never carried the field
   keep parsing as before.
 - `migrateCodexWindows` (`lib/usage.js`, run from `migrateStoredHistory()` at service-worker startup)
-  relabels already-stored samples: a `codex.session` reading whose `resetsAt` is more than 24 h after
-  its `timestamp` can only have come from a weekly window, so it moves to `codex.weekly`. Without
-  this the chart would show a broken 5h series next to a new weekly one for the same data.
+  relabels already-stored samples. Without it the chart would show a broken 5h series next to a new
+  weekly one for the same data. Classification works off **reset timestamps, not per-sample
+  remaining time**, because a sample taken in the last hours of a weekly window looks short-dated on
+  its own: every reset more than 24 h after any sample — plus every reset already stored as weekly —
+  marks that timestamp as a weekly window, and all samples sharing it move together. A sample whose
+  *both* metrics contradict their labels (long-dated `session`, short-dated `weekly`, from a payload
+  that put the weekly window first) is swapped rather than dropped.
+- The toolbar badge is retargeted whenever it points at a metric the plan does not expose
+  (`resolveBadgeTarget`, `background.js`) — on every collection, and immediately after a migration,
+  so an offline account never keeps a `!` badge. Settings keeps the chosen *provider* when it has to
+  change the metric.
 - The Codex **5-hour row and legend are now optional** the same way the weekly ones are
   (`dashboard/dashboard.js`, `dashboard/index.html`), and the `codex-session` badge target hides when
   the plan has no 5-hour window (`settings/settings.js`). The 5-hour row stays as the placeholder when

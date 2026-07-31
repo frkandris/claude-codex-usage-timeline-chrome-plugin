@@ -236,7 +236,7 @@ async function collectUsage() {
       codex: { enabled: settings.providers.codex, ok: Boolean(codex.data), error: codex.error, source: codex.source }
     }
   });
-  await updateBadge(sample, settings.badgeTarget);
+  await updateBadge(sample, await resolveBadgeTarget(sample, settings.badgeTarget));
   return { sample, status: { claude, codex } };
 }
 
@@ -245,11 +245,26 @@ async function migrateStoredHistory() {
   const migrated = migrateCodexWindows(history);
   if (migrated === history) return;
   await chrome.storage.local.set({ history: migrated });
-  // A badge pointing at the now-empty Codex 5-hour metric would render "!" forever.
-  const latestCodex = [...migrated].reverse().find((sample) => sample?.codex)?.codex;
-  if (badgeTarget === "codex-session" && !Number.isFinite(latestCodex?.session?.used) && Number.isFinite(latestCodex?.weekly?.used)) {
-    await chrome.storage.local.set({ badgeTarget: "codex-weekly" });
-  }
+  // Migration is what empties the 5-hour metric, so fix the badge here as well — waiting for the
+  // next successful collection would leave a "!" on an account that is offline or erroring.
+  const latest = [...migrated].reverse().find((sample) => sample?.codex);
+  if (!latest || typeof badgeTarget !== "string") return;
+  await updateBadge(latest, await resolveBadgeTarget(latest, badgeTarget));
+}
+
+// A badge aimed at a metric the plan does not expose renders "!" forever — the 5-hour Codex window
+// does not exist on every plan. As soon as a sample shows which metric the account actually has,
+// move the badge to it. Runs on every collection, so a fresh install is covered too, not just
+// histories that needed migrating.
+async function resolveBadgeTarget(sample, badgeTarget) {
+  if (badgeTarget === "none") return badgeTarget;
+  const [provider, metric] = badgeTarget.split("-");
+  if (Number.isFinite(sample?.[provider]?.[metric]?.used)) return badgeTarget;
+  const alternative = metric === "session" ? "weekly" : "session";
+  if (!Number.isFinite(sample?.[provider]?.[alternative]?.used)) return badgeTarget;
+  const retargeted = `${provider}-${alternative}`;
+  await chrome.storage.local.set({ badgeTarget: retargeted });
+  return retargeted;
 }
 
 async function scheduleAlarm(intervalMinutes, delayInMinutes = intervalMinutes) {
