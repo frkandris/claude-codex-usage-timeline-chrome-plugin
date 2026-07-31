@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AI Usage Timeline – Claude & Codex",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "See how much of your Claude and Codex usage limits you have burned, on one local timeline with a trend forecast.",
   "homepage_url": "https://github.com/frkandris/claude-codex-usage-timeline-chrome-plugin",
   "minimum_chrome_version": "111",

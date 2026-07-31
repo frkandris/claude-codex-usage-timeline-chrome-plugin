@@ -25,9 +25,11 @@ New here? Read [[architecture]] first, then the schema in `CLAUDE.md` (how this 
 ### External systems — `integrations/`  ← highest-value pages
 - [[claude-ai-usage-api]] — undocumented `claude.ai` usage endpoint, org discovery, `limits[]` shape.
 - [[chatgpt-codex-usage-api]] — undocumented `chatgpt.com` usage endpoint, JWT account-id, headers.
+- [[chrome-web-store]] — how a release reaches users: automated package upload + publish.
 
 ### Getting things done — `workflows/` · `runbooks/`
-- [[development-and-testing]] · [[loading-and-reloading-the-extension]] · [[publishing-to-the-chrome-web-store]]
+- [[development-and-testing]] · [[loading-and-reloading-the-extension]] · [[release-process]] ·
+  [[publishing-to-the-chrome-web-store]]
 - [[fable-or-metric-shows-no-data]] · [[provider-shows-sign-in-or-error]] · [[claude-shows-zero-percent]]
 
 ### Reasoning trail — `decisions/` · `bugs/` · `tech-debt/` · `hacks/`

@@ -11,6 +11,10 @@ The listing copy, permission justifications and asset inventory live in `store/l
 file is the source of truth for what gets typed into the Developer Dashboard. This page covers the
 mechanics around it.
 
+> **Since 2026-07-31 the upload is automatic**: a push to `release` builds this same package and
+> submits it through the store API — see [[release-process]] and [[chrome-web-store]]. The manual
+> build below stays useful for inspecting the zip and as a fallback.
+
 ## Build the package
 
 ```bash
@@ -23,13 +27,15 @@ The script whitelists what Chrome actually loads — `manifest.json`, `backgroun
 A missing entry fails the build loudly instead of producing a silently incomplete zip.
 
 Bump `version` in `manifest.json` before every upload — the store rejects a re-upload of a version
-that already exists.
+that already exists. The release workflow runs this same script, so what CI ships and what
+`npm run package` produces are the same bytes by construction.
 
 ## Store metadata comes from the manifest
 
 The listing **name** and **short description** are read from `manifest.json`, not typed into the
-dashboard. The store caps them at 75 and 132 characters respectively; both are currently well
-under. Changing either means shipping a new package, not editing the listing.
+dashboard. The store caps them at 75 and 132 characters respectively; both are currently well under
+(34 and 112) and the release workflow fails the build if either limit is crossed. Changing either
+means shipping a new package, not editing the listing.
 
 `homepage_url` and `minimum_chrome_version: 111` were added for the first submission
 (`manifest.json`). 111 is where `oklch()` and `color-mix()` shipped — both are load-bearing in
@@ -72,4 +78,5 @@ combination, so each justification in `store/listing.md` names the exact call si
 [[2026-07-27-store-listing-positioning]] for the naming and trademark reasoning.
 
 ## Related
-[[development-and-testing]] · [[loading-and-reloading-the-extension]] · [[data-export-and-retention]]
+[[release-process]] · [[chrome-web-store]] · [[development-and-testing]] ·
+[[loading-and-reloading-the-extension]] · [[data-export-and-retention]]

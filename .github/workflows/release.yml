@@ -1,0 +1,169 @@
+name: Release Extension
+
+on:
+  push:
+    branches: [release]
+
+permissions:
+  contents: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # The release is the only gate this project has — a red test must stop it.
+      - name: Run tests
+        run: npm test
+
+      # The store reads the listing name and description from the manifest, so their limits are
+      # release blockers, not cosmetics. See wiki/workflows/publishing-to-the-chrome-web-store.md.
+      - name: Read and check the manifest
+        id: version
+        run: |
+          set -euo pipefail
+          VERSION=$(jq -r '.version' manifest.json)
+          if ! echo "$VERSION" | grep -qE '^[0-9]+(\.[0-9]+){1,3}$'; then
+            echo "::error::manifest.json version is not a valid extension version: $VERSION"
+            exit 1
+          fi
+          NAME_LENGTH=$(jq -r '.name | length' manifest.json)
+          if [ "$NAME_LENGTH" -gt 75 ]; then
+            echo "::error::manifest.json name is $NAME_LENGTH characters, the Chrome Web Store limit is 75"
+            exit 1
+          fi
+          DESCRIPTION_LENGTH=$(jq -r '.description | length' manifest.json)
+          if [ "$DESCRIPTION_LENGTH" -gt 132 ]; then
+            echo "::error::manifest.json description is $DESCRIPTION_LENGTH characters, the Chrome Web Store limit is 132"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      # `scripts/package.sh` is the single definition of what ships — the same zip a manual
+      # upload would use, so CI and a local `npm run package` cannot drift apart.
+      - name: Build the extension package
+        id: package
+        run: |
+          set -euo pipefail
+          npm run package
+          echo "path=dist/ai-usage-timeline-${{ steps.version.outputs.version }}.zip" >> "$GITHUB_OUTPUT"
+
+      # Only this version's section becomes the release body; the file keeps the full history.
+      - name: Extract release notes
+        run: |
+          set -euo pipefail
+          awk -v version="## v${{ steps.version.outputs.version }}" '
+            $0 == version { collecting = 1; next }
+            collecting && /^## v/ { exit }
+            collecting { print }
+          ' RELEASE_NOTES.md > release-body.md
+          if [ ! -s release-body.md ]; then
+            echo "::warning::RELEASE_NOTES.md has no '## v${{ steps.version.outputs.version }}' section — using the whole file"
+            cp RELEASE_NOTES.md release-body.md
+          fi
+          cat release-body.md
+
+      - name: Delete existing release if same version
+        run: |
+          gh release delete "v${{ steps.version.outputs.version }}" --yes || true
+          git push origin --delete "v${{ steps.version.outputs.version }}" || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        run: |
+          gh release create "v${{ steps.version.outputs.version }}" \
+            "${{ steps.package.outputs.path }}" \
+            --title "AI Usage Timeline v${{ steps.version.outputs.version }}" \
+            --notes-file release-body.md \
+            --latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # --- Chrome Web Store ---------------------------------------------------
+      # Runs only once the CWS credentials are configured; until then the GitHub
+      # Release above still happens and this is skipped with a warning.
+      # Setup: wiki/integrations/chrome-web-store.md ("Automated publishing").
+      #   Repo VARIABLE: CWS_EXTENSION_ID
+      #   Repo SECRETS : CWS_CLIENT_ID, CWS_CLIENT_SECRET, CWS_REFRESH_TOKEN
+
+      - name: Check Chrome Web Store credentials
+        id: cws_check
+        env:
+          CWS_EXTENSION_ID: ${{ vars.CWS_EXTENSION_ID }}
+          CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+        run: |
+          if [ -n "$CWS_EXTENSION_ID" ] && [ -n "$CWS_CLIENT_ID" ] \
+             && [ -n "$CWS_CLIENT_SECRET" ] && [ -n "$CWS_REFRESH_TOKEN" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Chrome Web Store credentials not configured — skipping upload. See wiki/integrations/chrome-web-store.md"
+          fi
+
+      - name: Upload to Chrome Web Store and publish
+        if: steps.cws_check.outputs.configured == 'true'
+        env:
+          CWS_EXTENSION_ID: ${{ vars.CWS_EXTENSION_ID }}
+          CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          echo "Requesting access token…"
+          TOKEN_RESPONSE=$(curl -sS -X POST https://oauth2.googleapis.com/token \
+            --data-urlencode "client_id=$CWS_CLIENT_ID" \
+            --data-urlencode "client_secret=$CWS_CLIENT_SECRET" \
+            --data-urlencode "refresh_token=$CWS_REFRESH_TOKEN" \
+            --data-urlencode "grant_type=refresh_token")
+
+          ACCESS_TOKEN=$(echo "$TOKEN_RESPONSE" | jq -r '.access_token // empty')
+          if [ -z "$ACCESS_TOKEN" ]; then
+            # Print only the error fields — never the whole body (it can echo secrets).
+            echo "::error::Could not get an access token: $(echo "$TOKEN_RESPONSE" | jq -r '.error // "unknown"') / $(echo "$TOKEN_RESPONSE" | jq -r '.error_description // "-"')"
+            exit 1
+          fi
+
+          echo "Uploading package to item $CWS_EXTENSION_ID…"
+          UPLOAD=$(curl -sS -X PUT \
+            -H "Authorization: Bearer $ACCESS_TOKEN" \
+            -H "x-goog-api-version: 2" \
+            -T "${{ steps.package.outputs.path }}" \
+            "https://www.googleapis.com/upload/chromewebstore/v1.1/items/$CWS_EXTENSION_ID")
+          echo "$UPLOAD" | jq .
+
+          UPLOAD_STATE=$(echo "$UPLOAD" | jq -r '.uploadState // "UNKNOWN"')
+          if [ "$UPLOAD_STATE" != "SUCCESS" ]; then
+            echo "::error::Upload failed (uploadState=$UPLOAD_STATE)"
+            exit 1
+          fi
+
+          echo "Publishing…"
+          PUBLISH=$(curl -sS -X POST \
+            -H "Authorization: Bearer $ACCESS_TOKEN" \
+            -H "x-goog-api-version: 2" \
+            -H "Content-Length: 0" \
+            "https://www.googleapis.com/chromewebstore/v1.1/items/$CWS_EXTENSION_ID/publish")
+          echo "$PUBLISH" | jq .
+
+          STATUS=$(echo "$PUBLISH" | jq -r '.status // [] | join(",")')
+          case "$STATUS" in
+            *OK*|*ITEM_PENDING_REVIEW*)
+              echo "::notice::Submitted to the Chrome Web Store (status: $STATUS). Review can take days."
+              ;;
+            *)
+              echo "::error::Publish failed (status: $STATUS)"
+              exit 1
+              ;;
+          esac

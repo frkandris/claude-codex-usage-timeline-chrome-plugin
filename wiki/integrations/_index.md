@@ -6,3 +6,4 @@ Each page records the live response shape with an **observation date** and how t
 
 * [[claude-ai-usage-api]] — `claude.ai` org discovery + `/usage`; cookie auth; the `limits[]` shape.
 * [[chatgpt-codex-usage-api]] — `chatgpt.com` session token + `/wham/usage`; bearer + account header.
+* [[chrome-web-store]] — publishing target; automated upload via the CWS API, credentials, constraints.

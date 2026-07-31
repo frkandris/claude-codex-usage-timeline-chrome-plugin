@@ -40,4 +40,7 @@ showing the layered pattern every new feature follows. Use it as the template.
 - **Reload matters:** Chrome caches extension code; after editing, reload at `chrome://extensions`
   before testing. See `wiki/workflows/loading-and-reloading-the-extension.md`.
 - **Tests:** `npm test`.
+- **Release:** `git push origin main:release` → tests, GitHub Release, and Chrome Web Store submission
+  run automatically (`.github/workflows/release.yml`). Bump `manifest.json` and prepend a
+  `RELEASE_NOTES.md` section first — see `wiki/workflows/release-process.md`.
 - **Remote:** GitHub `frkandris/claude-codex-usage-timeline-chrome-plugin` (`gh` available).
