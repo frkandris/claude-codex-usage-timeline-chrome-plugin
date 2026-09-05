@@ -44,11 +44,12 @@ FEATURES
   own colour and each window in its own line style.
 • Trend forecast. A linear projection of your recent slope, ending either at the moment the limit
   would be exhausted or at the next reset — whichever comes first.
-• Any range. 30 minutes, hours, 24 hours, 48 hours, 7 days, 30 days, or the full history.
+• Any range. 30 minutes, hours, every day from 1 to 7, 30 days, or the full history.
 • Toolbar badge. Put one number of your choice on the extension icon and read it without opening
   anything.
 • Your interval. Measure every 5, 10, 15, 30 or 60 minutes.
-• Either service, or both. Turn Claude or Codex off entirely and the chart adapts.
+• Either service, or both. A new install keeps the service it can actually read and hides the other;
+  turn Claude or Codex off or back on whenever you like, and the chart adapts.
 • Point-level control. Hover any sample to inspect it, click to delete a bad reading.
 • CSV export and one-click history wipe.
 
