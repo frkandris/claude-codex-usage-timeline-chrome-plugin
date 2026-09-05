@@ -3,7 +3,7 @@ type: App
 title: Settings
 description: The options page — refresh interval, provider toggles, badge target, forecast toggle, export/clear.
 resource: settings/index.html
-timestamp: 2026-07-21
+timestamp: 2026-09-05
 ---
 
 # Settings — `settings/`
@@ -15,7 +15,10 @@ gear. `settings/index.html` + `settings/settings.js` (149 lines) + `settings/set
 ## Controls (`settings/index.html`)
 
 - **Refresh** — 5/10/15/30/60 min (`refreshInterval`). Persisted as `refreshIntervalMinutes`.
-- **Services** — `claudeEnabled` / `codexEnabled` checkboxes.
+- **Services** — `claudeEnabled` / `codexEnabled` checkboxes. On a brand-new install these are set
+  **for** the person: the first collection that reads anything switches off a provider that answered
+  nothing, so an unused service never renders an empty card. See
+  [[2026-09-05-first-run-provider-detection]].
 - **Icon badge** — `badgeTarget` select; each Codex option is hidden until that metric has data
   (`codexMetricsAvailable`, `settings/settings.js`) — `codex-session` stays offered while there is no
   Codex data at all, since plans differ in which windows they expose
@@ -28,7 +31,9 @@ gear. `settings/index.html` + `settings/settings.js` (149 lines) + `settings/set
 
 - `loadSettings` (`:19`) reads storage, normalizes via `normalizeProviderSettings`
   (`lib/settings.js`), and reconciles the badge if the stored target was invalid.
-- `saveSettings` (`:73`) writes settings, shows "Saving…/Saved", then re-creates the `collect-usage`
+- `saveSettings` (`:73`) writes settings — including `providersInitialized: true`, which ends the
+  worker's first-run provider detection so a hand-picked provider is never switched off again —
+  shows "Saving…/Saved", then re-creates the `collect-usage`
   alarm with the new interval and refreshes the badge. Alarm/badge failures are swallowed — the
   worker reconciles the alarm on startup and the next collection refreshes the badge.
 - `syncBadgeOptions` (`:44`) keeps the badge dropdown consistent with enabled providers + data

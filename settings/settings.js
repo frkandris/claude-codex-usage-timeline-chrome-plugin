@@ -97,7 +97,10 @@ async function saveSettings() {
       claudeEnabled: providerSettings.providers.claude,
       codexEnabled: providerSettings.providers.codex,
       badgeTarget: providerSettings.badgeTarget,
-      showProjection: providerSettings.showProjection
+      showProjection: providerSettings.showProjection,
+      // A deliberate choice here ends the worker's first-run provider detection, so a provider
+      // switched on by hand is never switched off again by a failed collection.
+      providersInitialized: true
     });
     saveStatus.textContent = "Saved";
     statusTimer = setTimeout(() => { saveStatus.textContent = ""; }, 1600);

@@ -21,7 +21,9 @@ has no Chrome API dependency, which is exactly why it is the only unit-tested la
    - `lib/usage.js` — parsing the two providers' responses (`parseClaudeUsage`, `parseCodexUsage`),
      org-id discovery (`findOrganizationId`), JWT account-id extraction (`extractChatGptAccountId`),
      history math (`appendSample`, `removeMeasurement`), and the forecast (`projectUsage`).
-   - `lib/settings.js` — settings normalization + allowed values (intervals, badge targets).
+   - `lib/settings.js` — settings normalization + allowed values (intervals, badge targets, chart
+     ranges), and the first-run provider rule (`firstRunProviderSettings`, see
+     [[2026-09-05-first-run-provider-detection]]).
    - No `chrome.*`, no DOM. Deterministic. Covered by `test/usage.test.js`, `test/settings.test.js`.
 2. **`background.js` — the service worker (orchestration + side effects).**
    Owns the collection cycle, the `chrome.alarms` schedule, `chrome.storage.local`, the toolbar badge,

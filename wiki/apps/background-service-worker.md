@@ -3,7 +3,7 @@ type: App
 title: Background service worker
 description: The MV3 service worker that collects usage, schedules the alarm, stores history, and paints the badge.
 resource: background.js
-timestamp: 2026-07-21
+timestamp: 2026-09-05
 ---
 
 # Background service worker — `background.js`
@@ -15,7 +15,8 @@ schedule, own `chrome.storage.local`, paint the toolbar badge, and answer messag
 ## Entry points / event wiring (`background.js:213`)
 
 - `onInstalled` / `onStartup` → `ensureAlarm()` — create/reconcile the `collect-usage` alarm from the
-  stored interval.
+  stored interval. `onInstalled` with any reason **other than** `"install"` (i.e. an update) also sets
+  `providersInitialized`, so first-run provider detection never touches an existing profile.
 - `alarms.onAlarm` (`collect-usage`) → `collectUsage()`.
 - `action.onClicked` → `openDashboard()` — focus the existing dashboard tab or open one.
 - `runtime.onMessage`:
@@ -29,8 +30,17 @@ schedule, own `chrome.storage.local`, paint the toolbar badge, and answer messag
 2. Collect both providers **in parallel** (`Promise.all`), each via `collectProvider` — but only if
    enabled; a disabled provider resolves to `{ data:null }`.
 3. Build one sample `{ timestamp, claude, codex }`, append with `appendSample` (`lib/usage.js:123`,
-   drops >90-day entries), write `history` + `status`.
-4. `updateBadge(sample, badgeTarget)`.
+   drops >90-day entries).
+4. **Re-read the settings.** Collecting can take tens of seconds (the background-tab fallback alone
+   waits up to 20 s), so the settings written back are the ones stored *now*, not the ones read
+   before the fetches. Someone who saved the settings page meanwhile must not have their choice
+   rolled back by a late-finishing collection.
+5. **First run only** (`providersInitialized` unset in that fresh read, and the sample read at least
+   one provider): `firstRunProviderSettings` (`lib/settings.js`) decides which providers this install
+   keeps, and its result is written in the same `set` as `history` + `status` so the dashboard
+   re-renders once. See [[2026-09-05-first-run-provider-detection]].
+6. Write `history` + `status` (+ the first-run provider settings).
+6. `updateBadge(sample, await resolveBadgeTarget(sample, badgeTarget))`.
 
 ### Two-tier collection (`collectProvider`, `background.js:114`)
 

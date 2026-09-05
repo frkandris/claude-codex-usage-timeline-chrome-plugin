@@ -3,11 +3,16 @@ import {
   extractChatGptAccountId,
   findOrganizationIds,
   hasLiveUsage,
+  hasReading,
   migrateCodexWindows,
   parseClaudeUsage,
   parseCodexUsage
 } from "./lib/usage.js";
-import { normalizeProviderSettings, normalizeRefreshInterval } from "./lib/settings.js";
+import {
+  firstRunProviderSettings,
+  normalizeProviderSettings,
+  normalizeRefreshInterval
+} from "./lib/settings.js";
 
 const ALARM_NAME = "collect-usage";
 const DASHBOARD_URL = chrome.runtime.getURL("dashboard/index.html");
@@ -206,12 +211,13 @@ async function updateBadgeFromHistory(settings) {
   await updateBadge(latest, settings.badgeTarget);
 }
 
+const SETTINGS_KEYS = [
+  "claudeEnabled", "codexEnabled", "badgeProvider", "badgeTarget", "showProjection", "providersInitialized"
+];
+
 async function collectUsage() {
   const timestamp = Date.now();
-  const storedSettings = await chrome.storage.local.get([
-    "claudeEnabled", "codexEnabled", "badgeProvider", "badgeTarget", "showProjection"
-  ]);
-  const settings = normalizeProviderSettings(storedSettings);
+  const settings = normalizeProviderSettings(await chrome.storage.local.get(SETTINGS_KEYS));
   const [claude, codex] = await Promise.all([
     settings.providers.claude
       ? collectProvider("claude", collectClaudeDirect)
@@ -225,18 +231,30 @@ async function collectUsage() {
     claude: claude.data,
     codex: codex.data
   };
-  const stored = await chrome.storage.local.get(["history"]);
+  // Collecting can take tens of seconds — the background-tab fallback alone waits up to 20 s — so the
+  // settings are read again here rather than reused from the top of the function. Someone who opened
+  // Settings meanwhile has already written their choice, and this write must not roll it back.
+  const stored = await chrome.storage.local.get(["history", ...SETTINGS_KEYS]);
   const hasEnabledProvider = settings.providers.claude || settings.providers.codex;
   const history = hasEnabledProvider ? appendSample(stored.history, sample, timestamp) : (stored.history ?? []);
+  const presence = { claude: hasReading(sample.claude), codex: hasReading(sample.codex) };
+  const decided = firstRunProviderSettings(stored, presence);
+  const effective = decided ?? normalizeProviderSettings(stored);
   await chrome.storage.local.set({
     history,
+    ...(decided && {
+      providersInitialized: true,
+      claudeEnabled: decided.providers.claude,
+      codexEnabled: decided.providers.codex,
+      badgeTarget: decided.badgeTarget
+    }),
     status: {
       lastAttempt: timestamp,
-      claude: { enabled: settings.providers.claude, ok: Boolean(claude.data), error: claude.error, source: claude.source },
-      codex: { enabled: settings.providers.codex, ok: Boolean(codex.data), error: codex.error, source: codex.source }
+      claude: { enabled: effective.providers.claude, ok: Boolean(claude.data), error: claude.error, source: claude.source },
+      codex: { enabled: effective.providers.codex, ok: Boolean(codex.data), error: codex.error, source: codex.source }
     }
   });
-  await updateBadge(sample, await resolveBadgeTarget(sample, settings.badgeTarget));
+  await updateBadge(sample, await resolveBadgeTarget(sample, effective.badgeTarget));
   return { sample, status: { claude, codex } };
 }
 
@@ -296,7 +314,12 @@ async function openDashboard() {
   }
 }
 
-chrome.runtime.onInstalled.addListener(() => ensureAlarm());
+chrome.runtime.onInstalled.addListener(async (details) => {
+  // Only a brand-new install lets the first collection decide which providers to keep. An update
+  // arrives at a profile whose provider switches the person already set by hand, or lived with.
+  if (details?.reason !== "install") await chrome.storage.local.set({ providersInitialized: true });
+  await ensureAlarm();
+});
 chrome.runtime.onStartup.addListener(() => ensureAlarm());
 chrome.alarms.onAlarm.addListener((alarm) => alarm.name === ALARM_NAME && collectUsage());
 chrome.action.onClicked.addListener(openDashboard);
@@ -315,7 +338,9 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
           claudeEnabled: providerSettings.providers.claude,
           codexEnabled: providerSettings.providers.codex,
           badgeTarget: providerSettings.badgeTarget,
-          showProjection: providerSettings.showProjection
+          showProjection: providerSettings.showProjection,
+          // An explicit choice ends the first-run provider detection.
+          providersInitialized: true
         });
         await updateBadgeFromHistory(providerSettings);
         sendResponse({

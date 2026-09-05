@@ -8,6 +8,7 @@ Decisions are durable records; they don't move to "resolved". Supersede by writi
 linking back.
 
 ## Records
+* [[2026-09-05-first-run-provider-detection]] — a fresh install lets its first collection switch off the provider it cannot read.
 * [[2026-07-27-store-listing-positioning]] — trademarked store name, seeded screenshots, Pages-hosted policy.
 * [[2026-07-21-limits-array-for-fable]] — read Fable from the tolerant `limits[]` walk, not a hard path.
 * [[2026-07-15-direct-fetch-then-background-tab-fallback]] — worker fetch first, in-page tab fallback.

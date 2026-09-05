@@ -3,6 +3,20 @@
 Newest first. One `## vX.Y.Z` section per released version — the release workflow uses the section
 matching `manifest.json`'s version as the GitHub Release body.
 
+## v1.1.0
+
+- **The extension sets itself up for the services you actually use** — on a new install, the first
+  collection that reads anything switches off the provider it could not read, and points the toolbar
+  badge at the one that answered. No more empty Codex card and chart line on a Claude-only account,
+  or a badge stuck on `!`. Existing installs keep their settings untouched, and either provider can
+  be switched back on at any time on the Settings page.
+- **The Claude and Codex headings link to your usage pages** — click either card's title to open that
+  service's own usage view, where the same numbers come from.
+- **The chart range now steps a day at a time** — `24 hours` and `48 hours` became `1 day` and
+  `2 days`, and `3` to `6 days` fill the gap up to the existing `7 days`. A range you had selected
+  before is preserved.
+- A small link to the Chrome Web Store listing now sits in the dashboard footer.
+
 ## v1.0.1
 
 - **Codex weekly limit is no longer labelled "5 hours"** — Codex windows are now classified by the

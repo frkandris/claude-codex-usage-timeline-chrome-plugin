@@ -13,7 +13,13 @@ npm test        # == node --test  (package.json "scripts.test")
 ```
 Node's built-in runner executes `test/usage.test.js` and `test/settings.test.js`. Only the pure
 `lib/` layer is unit-tested (no Chrome/DOM mocks needed) — this is deliberate; see [[architecture]].
-21 tests at the initial commit.
+21 tests at the initial commit, 46 on 2026-09-05.
+
+Two of them are **drift guards** rather than unit tests: they read `dashboard/index.html` and
+`settings/index.html` and assert that the `<option>` values of the range and badge dropdowns are
+exactly the vocabularies in `lib/settings.js`. Nothing else ties the markup to the code — there is no
+build step — so a hand-edited dropdown could otherwise offer a value the code silently replaces with
+a default, or hide one the code still supports.
 
 ## No build
 Vanilla ES modules, loaded directly by Chrome — there is **no bundler/transpiler/formatter/linter**.

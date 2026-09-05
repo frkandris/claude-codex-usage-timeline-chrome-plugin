@@ -13,7 +13,11 @@ The extension is published as a Web Store item; users get updates through Chrome
 once a submission passes review. Pushing to the `release` branch uploads and submits the package
 automatically — see [[release-process]] for the full flow.
 
-Item id `pakalpjlkpcabadlkmbglcafigpjkocm` (also the repo variable `CWS_EXTENSION_ID`). First
+Item id `pakalpjlkpcabadlkmbglcafigpjkocm` (also the repo variable `CWS_EXTENSION_ID`); the public
+listing is
+`https://chromewebstore.google.com/detail/ai-usage-timeline-%E2%80%93-claud/pakalpjlkpcabadlkmbglcafigpjkocm`
+— the slug carries an escaped en dash and Chrome truncates it to `claud`, so copy it rather than
+rebuilding it. The [[dashboard]] footer links there. First
 submission was v1.0.0 on 2026-07-27 — verified 2026-07-31 by asking the CRX update service, which is
 the cheapest way to see which version the store actually serves:
 

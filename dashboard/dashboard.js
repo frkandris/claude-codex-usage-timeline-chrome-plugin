@@ -1,29 +1,16 @@
 import { projectUsage, removeMeasurement } from "../lib/usage.js";
+import { DEFAULT_RANGE, RANGE_DURATIONS_MS, normalizeRange } from "../lib/settings.js";
 
 const $ = (id) => document.getElementById(id);
 const state = {
   history: [],
   status: null,
-  range: "1",
+  range: DEFAULT_RANGE,
   hoverPoint: null,
   hoverSeries: null,
   providers: { claude: true, codex: true },
   showProjection: true
 };
-const rangeDurations = new Map([
-  ["30m", 30 * 60 * 1000],
-  ["1h", 60 * 60 * 1000],
-  ["2h", 2 * 60 * 60 * 1000],
-  ["3h", 3 * 60 * 60 * 1000],
-  ["4h", 4 * 60 * 60 * 1000],
-  ["6h", 6 * 60 * 60 * 1000],
-  ["12h", 12 * 60 * 60 * 1000],
-  ["1", 24 * 60 * 60 * 1000],
-  ["48h", 48 * 60 * 60 * 1000],
-  ["7", 7 * 24 * 60 * 60 * 1000],
-  ["30", 30 * 24 * 60 * 60 * 1000]
-]);
-const validRanges = new Set([...rangeDurations.keys(), "all"]);
 const colors = { claude: "#bd654b", codex: "#3f7766", projection: "#7b8ea1", bridge: "#b7b3ab", now: "#9d988f", grid: "#dedbd4", text: "#77736c", surface: "#fbfaf7" };
 const series = [
   { provider: "claude", metric: "session", label: "Claude 5h", dash: [] },
@@ -126,7 +113,7 @@ function renderProvider(provider) {
 
 function filteredHistory(now = Date.now()) {
   if (state.range === "all") return state.history;
-  const cutoff = now - rangeDurations.get(state.range);
+  const cutoff = now - RANGE_DURATIONS_MS.get(state.range);
   return state.history.filter((sample) => sample.timestamp >= cutoff);
 }
 
@@ -152,7 +139,7 @@ function drawChart() {
   if (!data.length) return;
   const start = state.range === "all"
     ? data[0].timestamp
-    : now - rangeDurations.get(state.range);
+    : now - RANGE_DURATIONS_MS.get(state.range);
   const baseEnd = now;
   const projections = state.showProjection
     ? visibleSeries.map((item) => {
@@ -358,7 +345,7 @@ async function load() {
   try { alarm = await extensionApi.alarms?.get?.(ALARM_NAME); } catch { /* Alarm data is optional in previews. */ }
   state.history = stored.history ?? [];
   state.status = stored.status ?? null;
-  state.range = validRanges.has(stored.selectedRange) ? stored.selectedRange : "1";
+  state.range = normalizeRange(stored.selectedRange);
   state.providers.claude = stored.claudeEnabled !== false;
   state.providers.codex = stored.codexEnabled !== false;
   state.showProjection = stored.showProjection !== false;
@@ -373,7 +360,7 @@ $("refreshButton").addEventListener("click", async () => {
   finally { button.disabled = false; button.removeAttribute("aria-busy"); }
 });
 $("rangeSelect").addEventListener("change", async (event) => {
-  state.range = validRanges.has(event.target.value) ? event.target.value : "1";
+  state.range = normalizeRange(event.target.value);
   await extensionApi.storage.local.set({ selectedRange: state.range });
   drawChart();
 });

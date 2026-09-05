@@ -49,6 +49,10 @@ Terms as they are used in this codebase. Code references are against the initial
 - **Direct collection vs background-tab fallback.** Direct = a `fetch` from the service worker with
   `credentials:"include"`. Fallback = open an inactive provider tab and run the same fetch in the
   page's `MAIN` world. See [[2026-07-15-direct-fetch-then-background-tab-fallback]].
+- **`providersInitialized`.** A one-way flag in `chrome.storage.local`. While it is unset, the
+  collection cycle may switch off a provider that answered nothing; the first collection that reads
+  anything, any settings save, and any extension update set it for good. See
+  [[2026-09-05-first-run-provider-detection]].
 - **`status`.** Per-collection metadata written next to `history`: `{ lastAttempt, claude, codex }`,
   each provider `{ enabled, ok, error, source }`. Drives the "Sign in" / "Error" / "No data" pill
   (`dashboard/dashboard.js:115`).

@@ -12,6 +12,10 @@ spent, and draws the history on a shared time-series chart with trend forecasts.
    profile.
 5. Click the extension icon to open the dashboard, then collect the first sample manually.
 
+If you only use one of the two services, sign in to that one: the first collection switches the other
+off, so the dashboard shows just the provider you have. You can turn it back on at any time on the
+Settings page.
+
 The sampling interval is configurable on the **Settings** page (from the dashboard header): 5, 10, 15,
 30 or 60 minutes, 15 by default. The same page toggles Claude and Codex collection independently and
 picks which metric the toolbar badge shows.

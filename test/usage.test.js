@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { appendSample, extractChatGptAccountId, findOrganizationId, findOrganizationIds, hasLiveUsage, migrateCodexWindows, parseClaudeUsage, parseCodexUsage, projectUsage, removeMeasurement } from "../lib/usage.js";
+import { appendSample, extractChatGptAccountId, findOrganizationId, findOrganizationIds, hasLiveUsage, hasReading, migrateCodexWindows, parseClaudeUsage, parseCodexUsage, projectUsage, removeMeasurement } from "../lib/usage.js";
 
 test("parses Claude session and weekly utilization", () => {
   const result = parseClaudeUsage({
@@ -181,6 +181,12 @@ test("treats all-zero limits without resets as no live usage", () => {
   const used = parseClaudeUsage({ five_hour: { utilization: 0, resets_at: "2026-07-31T18:00:00Z" }, seven_day: { utilization: 0 } });
   assert.equal(hasLiveUsage(used), true);
   assert.equal(hasLiveUsage(parseClaudeUsage({ five_hour: { utilization: 12 } })), true);
+});
+
+test("counts a provider as read when any metric carries a number", () => {
+  assert.equal(hasReading({ session: { used: 0, resetsAt: null }, weekly: { used: null } }), true);
+  assert.equal(hasReading({ session: { used: null }, weekly: { used: null } }), false);
+  assert.equal(hasReading(null), false);
 });
 
 test("retains ordered recent samples", () => {
