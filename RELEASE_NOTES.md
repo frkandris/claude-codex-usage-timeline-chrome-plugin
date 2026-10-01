@@ -3,6 +3,14 @@
 Newest first. One `## vX.Y.Z` section per released version — the release workflow uses the section
 matching `manifest.json`'s version as the GitHub Release body.
 
+## v1.2.0
+
+- **Purchased Claude credits are shown while you are spending them** — once a Claude limit reaches
+  100% and Claude continues on prepaid usage credits, the Claude card gains a **Credits** tile with
+  the remaining balance (for example €28.90) and the share already spent. A dotted **Claude · credits**
+  line joins the chart, with a forecast of when the balance runs out; hover a point to see the balance
+  at that time. Everything disappears again when the limit resets, so it only appears when it matters.
+
 ## v1.1.0
 
 - **The extension sets itself up for the services you actually use** — on a new install, the first

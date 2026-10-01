@@ -46,6 +46,9 @@ h1, h2, p { letter-spacing: 0; } h1 { margin: 0; font-size: 28px; line-height: 1
 .provider-status.error { color: var(--danger); text-decoration: underline; text-underline-offset: 3px; }
 .metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
 .claude-provider .metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+@media (min-width: 761px) { .claude-provider .metrics.four-metric { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; } }
+.metrics.four-metric .metric strong { font-size: 20px; }
+.metrics.four-metric .metric > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .codex-provider .metrics.single-metric { grid-template-columns: 1fr; }
 .metric { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 9px 12px; min-width: 0; }
 .metric[hidden], .legend > span[hidden] { display: none; }
@@ -67,6 +70,8 @@ select { height: 36px; border: 1px solid var(--line); border-radius: 5px; backgr
 .legend .fable-line { border: 0; }
 .legend .fable-line::before { content: ""; position: absolute; inset: 0 auto auto 0; width: 7px; height: 2px; background: currentColor; box-shadow: 15px 0 0 currentColor; }
 .legend .fable-line::after { content: ""; position: absolute; left: 10px; top: 0; width: 2px; height: 2px; background: currentColor; }
+.legend .credits-line { border: 0; }
+.legend .credits-line::before { content: ""; position: absolute; inset: 0 auto auto 0; width: 2px; height: 2px; background: currentColor; box-shadow: 5px 0 0 currentColor, 10px 0 0 currentColor, 15px 0 0 currentColor, 20px 0 0 currentColor; }
 .legend .projection-line { color: #7b8ea1; border: 0; }
 .legend .projection-line::before { content: ""; position: absolute; inset: 0 auto auto 0; width: 4px; height: 2px; background: currentColor; box-shadow: 8px 0 0 currentColor, 16px 0 0 currentColor; }
 .chart-wrap { position: relative; height: 390px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }

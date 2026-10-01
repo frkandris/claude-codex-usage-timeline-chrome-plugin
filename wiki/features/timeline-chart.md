@@ -25,7 +25,7 @@ one `drawChart` function (`dashboard/dashboard.js:133`). See [[2026-07-15-canvas
 
 ## Series & styling (`dashboard/dashboard.js:28`)
 Provider color encodes meaning (Claude `#bd654b`, Codex `#3f7766`); dash pattern encodes the metric
-(session solid, weekly `[10,7]`, Fable `[8,4,2,4]`). Session lines are drawn thicker than secondary
+(session solid, weekly `[10,7]`, Fable `[8,4,2,4]`, credits `[2,3]` (forecast `[1,4]`)). Session lines are drawn thicker than secondary
 metrics. Active series = enabled provider **and** (non-optional **or** currently has data)
 (`activeSeries`, `:35`).
 

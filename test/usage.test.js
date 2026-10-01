@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { appendSample, extractChatGptAccountId, findOrganizationId, findOrganizationIds, hasLiveUsage, hasReading, migrateCodexWindows, parseClaudeUsage, parseCodexUsage, projectUsage, removeMeasurement } from "../lib/usage.js";
+import { appendSample, extractChatGptAccountId, findOrganizationId, findOrganizationIds, hasLiveUsage, hasReading, isClaudeLimitReached, migrateCodexWindows, parseClaudeCredits, parseClaudeUsage, parseCodexUsage, projectUsage, removeMeasurement } from "../lib/usage.js";
 
 test("parses Claude session and weekly utilization", () => {
   const result = parseClaudeUsage({
@@ -260,4 +260,42 @@ test("continues a flat series until its reset", () => {
   const projection = projectUsage(history, "claude", "weekly", now);
   assert.equal(projection.targetTimestamp, resetsAt);
   assert.equal(projection.targetValue, 40);
+});
+
+// Shape observed live on 2026-10-01 from /api/organizations/{org}/prepaid/credits.
+const prepaid = {
+  amount: 2890, currency: "EUR",
+  balance: { money: { amount_minor: 2890, currency: "EUR", exponent: 2 }, credits: null },
+  tranches: [{ remaining_amount_minor_units: 2889, granted_amount_minor_units: 21250 }]
+};
+
+test("parses the prepaid credit balance as money plus the spent share", () => {
+  const credits = parseClaudeCredits(prepaid);
+  assert.equal(credits.remaining, 28.9); assert.equal(credits.currency, "EUR");
+  assert.equal(Math.round(credits.used), 86); assert.equal(credits.resetsAt, null);
+  // A tiny spend is a tiny percentage, not a fraction to be scaled up.
+  assert.equal(parseClaudeCredits({ ...prepaid, balance: { money: { amount_minor: 21150, exponent: 2 } } }).used.toFixed(2), "0.47");
+  // An explicit null balance falls back to the tranches, and the currency can come from the balance.
+  const fallback = parseClaudeCredits({ balance: { money: { amount_minor: null, currency: "USD", exponent: 2 } }, tranches: prepaid.tranches });
+  assert.equal(fallback.remaining, 28.89); assert.equal(fallback.currency, "USD");
+  assert.equal(parseClaudeCredits({ amount: 500, currency: "EUR" }).used, null);
+  assert.equal(parseClaudeCredits(null), null);
+  assert.equal(parseClaudeCredits({}), null);
+});
+
+test("detects an exhausted Claude limit in every shape the parser accepts", () => {
+  assert.equal(isClaudeLimitReached({ five_hour: { utilization: 0 }, seven_day: { utilization: 100 } }), true);
+  assert.equal(isClaudeLimitReached({ current_session: { used_percent: 100 } }), true);
+  assert.equal(isClaudeLimitReached({ session: { utilization: 5 }, weekly: { utilization: 100 } }), true);
+  assert.equal(isClaudeLimitReached({ five_hour: { utilization: 0 }, limits: [{ percent: 100, scope: { model: { display_name: "Fable" } } }] }), true);
+  assert.equal(isClaudeLimitReached({ five_hour: { utilization: 99 }, seven_day: { utilization: 20 } }), false);
+  assert.equal(isClaudeLimitReached(null), false);
+});
+
+test("Claude usage carries credits only when the prepaid response was attached", () => {
+  const base = { five_hour: { utilization: 0 }, seven_day: { utilization: 100 } };
+  assert.equal(parseClaudeUsage(base).credits, undefined);
+  assert.equal(parseClaudeUsage({ ...base, prepaid_credits: prepaid }).credits.remaining, 28.9);
+  // Below the limit the balance is not being spent, so a response that includes it is ignored.
+  assert.equal(parseClaudeUsage({ five_hour: { utilization: 10 }, prepaid_credits: prepaid }).credits, undefined);
 });

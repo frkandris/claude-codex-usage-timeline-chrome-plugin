@@ -4,6 +4,7 @@ import {
   findOrganizationIds,
   hasLiveUsage,
   hasReading,
+  isClaudeLimitReached,
   migrateCodexWindows,
   parseClaudeUsage,
   parseCodexUsage
@@ -43,6 +44,17 @@ function selectClaudeUsage(payloads) {
   throw lastError ?? new Error("The Claude usage format is not recognized.");
 }
 
+// Purchased credits only matter while a limit is exhausted, so the extra request is made only then.
+// A failure here must not cost the whole Claude reading — the credits are simply left out.
+async function attachPrepaidCredits(organizationId, payload) {
+  if (!isClaudeLimitReached(payload)) return payload;
+  try {
+    return { ...payload, prepaid_credits: await fetchJson(`https://claude.ai/api/organizations/${organizationId}/prepaid/credits`) };
+  } catch {
+    return payload;
+  }
+}
+
 async function collectClaudeDirect() {
   let organizationData;
   try {
@@ -61,7 +73,7 @@ async function collectClaudeDirect() {
   for (const organizationId of ordered) {
     let payload;
     try {
-      payload = await fetchJson(`https://claude.ai/api/organizations/${organizationId}/usage`);
+      payload = await attachPrepaidCredits(organizationId, await fetchJson(`https://claude.ai/api/organizations/${organizationId}/usage`));
     } catch (error) {
       lastError = error;
       continue;
@@ -163,7 +175,13 @@ async function collectInBackgroundTab(provider) {
         // Every organization is read; the service worker picks the one that reports real usage.
         const payloads = [];
         for (const id of ids) {
-          try { payloads.push(await read(`/api/organizations/${id}/usage`)); } catch { /* Try the next organization. */ }
+          try {
+            const usage = await read(`/api/organizations/${id}/usage`);
+            // Always asked here: the page cannot import the parser, and `parseClaudeUsage` drops
+            // the balance unless a limit is really exhausted. This fallback path is rare.
+            try { usage.prepaid_credits = await read(`/api/organizations/${id}/prepaid/credits`); } catch { /* Credits are optional. */ }
+            payloads.push(usage);
+          } catch { /* Try the next organization. */ }
         }
         if (!payloads.length) throw new Error("Claude usage could not be read for any organization.");
         return payloads;

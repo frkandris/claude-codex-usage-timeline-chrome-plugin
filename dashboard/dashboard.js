@@ -16,6 +16,7 @@ const series = [
   { provider: "claude", metric: "session", label: "Claude 5h", dash: [] },
   { provider: "claude", metric: "weekly", label: "Claude week", dash: [10, 7] },
   { provider: "claude", metric: "fable", label: "Claude Fable", dash: [8, 4, 2, 4], optional: true },
+  { provider: "claude", metric: "credits", label: "Claude credits", dash: [2, 3], optional: true },
   { provider: "codex", metric: "session", label: "Codex 5h", dash: [], optional: true },
   { provider: "codex", metric: "weekly", label: "Codex week", dash: [10, 7], optional: true }
 ];
@@ -58,6 +59,11 @@ const ALARM_NAME = "collect-usage";
 
 const formatPercent = (value) => Number.isFinite(value) ? `${Math.round(value)}%` : "–";
 const formatTime = (timestamp) => timestamp ? new Intl.DateTimeFormat("en-GB", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(timestamp) : "–";
+const formatMoney = (amount, currency) => {
+  if (!Number.isFinite(amount)) return "–";
+  try { return new Intl.NumberFormat("en-GB", { style: "currency", currency: currency || "EUR" }).format(amount); }
+  catch { return amount.toFixed(2); }
+};
 const resetLabel = (timestamp) => timestamp ? `Resets ${formatTime(timestamp)}` : "No reset";
 
 function updateCollectionTooltip(scheduledTime) {
@@ -92,6 +98,15 @@ function renderProvider(provider) {
   const data = latest(provider);
   const providerStatus = state.status?.[provider];
   const metrics = provider === "claude" ? ["session", "weekly", "fable"] : ["session", "weekly"];
+  if (provider === "claude") {
+    // Purchased credits are shown only while they are being spent: the collector records them only
+    // when a limit is exhausted, so the latest sample carries them exactly then.
+    const credits = data?.credits;
+    $("claudeCreditsMetric").hidden = !Number.isFinite(credits?.remaining);
+    $("claudeCredits").textContent = formatMoney(credits?.remaining, credits?.currency);
+    $("claudeCreditsBar").style.width = `${Number.isFinite(credits?.used) ? credits.used : 0}%`;
+    $("claudeCreditsReset").textContent = Number.isFinite(credits?.used) ? `${formatPercent(credits.used)} spent` : "Balance";
+  }
   for (const metric of metrics) {
     const prefix = `${provider}${metric[0].toUpperCase()}${metric.slice(1)}`;
     const used = data?.[metric]?.used;
@@ -187,6 +202,7 @@ function drawChart() {
       const y = padding.top + height - (value / 100) * height;
       started ? context.lineTo(x, y) : context.moveTo(x, y); started = true;
       const point = { index, provider: item.provider, metric: item.metric, label: item.label, x, y, value, timestamp: sample.timestamp };
+      if (item.metric === "credits") point.remaining = formatMoney(sample[item.provider].credits.remaining, sample[item.provider].credits.currency);
       points.push(point); seriesPoints.push(point);
     });
     context.stroke();
@@ -269,7 +285,7 @@ function drawChart() {
     });
     context.strokeStyle = colors.projection;
     context.lineWidth = (projection.item.metric === "session" ? 2 : 1.6) + (isFocused ? 0.7 : 0);
-    context.setLineDash(projection.item.metric === "weekly" ? [2, 5] : projection.item.metric === "fable" ? [7, 4, 2, 4] : [5, 4]);
+    context.setLineDash(projection.item.metric === "weekly" ? [2, 5] : projection.item.metric === "fable" ? [7, 4, 2, 4] : projection.item.metric === "credits" ? [1, 4] : [5, 4]);
     context.beginPath();
     context.moveTo(xForTimestamp(baseEnd), padding.top + height - (currentValue / 100) * height);
     context.lineTo(xForTimestamp(targetTimestamp), padding.top + height - (targetValue / 100) * height);
@@ -328,6 +344,10 @@ function render() {
   // placeholder when neither metric has data yet, so the card never renders empty.
   const hasCodexSession = hasCurrentMetric("codex", "session") || !hasCodexWeekly;
   $("claudeFableLegend").hidden = !state.providers.claude || !hasClaudeFable;
+  const hasClaudeCredits = hasCurrentMetric("claude", "credits");
+  $("claudeCreditsLegend").hidden = !state.providers.claude || !hasClaudeCredits;
+  // The card needs only the balance; the chart line and its legend need the spent share as well.
+  document.querySelector(".claude-provider .metrics").classList.toggle("four-metric", Number.isFinite(latest("claude")?.credits?.remaining));
   $("codexSessionMetric").hidden = !hasCodexSession;
   $("codexSessionLegend").hidden = !state.providers.codex || !hasCurrentMetric("codex", "session");
   $("codexWeeklyMetric").hidden = !hasCodexWeekly;
@@ -403,7 +423,8 @@ $("usageChart").addEventListener("mousemove", (event) => {
     const tooltip = $("tooltip"); tooltip.hidden = false;
     tooltip.style.left = `${Math.max(80, Math.min(bounds.width - 80, closest.x))}px`;
     tooltip.style.top = `${Math.max(78, closest.y)}px`;
-    tooltip.innerHTML = `<strong>${closest.label} · ${formatPercent(closest.value)}</strong><br>${formatTime(closest.timestamp)}<br>Click to delete`;
+    const shown = closest.remaining ? `${closest.remaining} left` : formatPercent(closest.value);
+    tooltip.innerHTML = `<strong>${closest.label} · ${shown}</strong><br>${formatTime(closest.timestamp)}<br>Click to delete`;
     if (changed) drawChart();
     return;
   }

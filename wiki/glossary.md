@@ -27,6 +27,10 @@ Terms as they are used in this codebase. Code references are against the initial
   `limit_window_seconds > 24 h` — which on some plans is `primary_window`, not `secondary_window`.
   Metric key: `weekly`. Each Codex row is hidden until a finite value exists (`dashboard/dashboard.js`,
   `render()`).
+- **Credits** (metric key `credits`, Claude-only, optional). The prepaid "buy more usage" balance Claude
+  spends once a plan limit is exhausted. Recorded only while a limit is at 100%, so the card and chart
+  line show only then. `used` = spent share of the granted tranches; `remaining` is money. See
+  [[claude-ai-usage-api]].
 - **Fable.** A Claude model whose usage counts against a **separate weekly, model-scoped limit** on
   the Max plan. In the `claude.ai` API it appears inside `limits[]` as a `weekly_scoped` entry with
   `scope.model.display_name == "Fable"` (not as a top-level key). Metric key: `fable`; Claude-only,

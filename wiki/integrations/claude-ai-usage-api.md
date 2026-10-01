@@ -4,7 +4,7 @@ title: claude.ai usage API
 description: Undocumented internal endpoints the extension reads for Claude usage, with the live response shape.
 resource: https://claude.ai/api/organizations/{org}/usage
 tags: [claude, integration, undocumented-api]
-timestamp: 2026-07-31
+timestamp: 2026-10-01
 ---
 
 # claude.ai usage API
@@ -97,7 +97,28 @@ recognized."* so the UI shows "Error" rather than fake zeros.
   four rows can carry slightly different sub-second stamps within one response.
 - **Reset time renders ~2h ahead of the raw UTC** in the UI (e.g. `04:00Z` → "Resets … 06:00" in
   CEST) — that is local-timezone formatting (`Intl.DateTimeFormat`), not a bug.
-- **`extra_usage`** describes pay-as-you-go credits (disabled here); the extension does not surface it.
+- **`extra_usage`** only says credits are enabled and how much was spent (`used_credits: 14294` minor
+  units, `monthly_limit: null`, observed 2026-10-01) — it has **no remaining balance**. The extension
+  reads the balance from `/prepaid/credits` instead (next section).
+
+## Prepaid credits — `GET /api/organizations/{org}/prepaid/credits`
+
+Observed 2026-10-01, the call the *Settings → Usage* panel makes (balance shown as "Remaining €29.94"):
+
+```jsonc
+{ "amount": 2890, "currency": "EUR",
+  "balance": { "money": { "amount_minor": 2890, "currency": "EUR", "exponent": 2 }, "credits": null },
+  "tranches": [{ "remaining_amount_minor_units": 2889, "granted_amount_minor_units": 21250,
+                 "granted_at": "2026-09-30T14:41:25Z", "expires_at": null,
+                 "program_id": "prepaid_additional_usage_individual" }],
+  "auto_reload_settings": null }
+```
+
+Amounts are **minor units** (÷ `10 ** exponent`). The extension requests this only while a Claude limit
+is at 100% (`isClaudeLimitReached`) — that is when credits are spent — and attaches the response to the
+usage payload as `prepaid_credits` so `parseClaudeUsage` returns `credits: { used, remaining, currency }`
+(`parseClaudeCredits`, `lib/usage.js`). `used` = spent share of the granted tranches, so the series
+climbs like the others. A failed credits request leaves the rest of the reading intact.
 
 ## How to re-capture the shape when it changes
 Sign in to claude.ai, open a tab, and in the page console run the org-discovery + usage fetch (same

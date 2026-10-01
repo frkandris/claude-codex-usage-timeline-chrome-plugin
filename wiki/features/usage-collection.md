@@ -26,7 +26,9 @@ Periodically (and on demand) sample each enabled provider's usage limits into on
 Each provider yields `{ data, error, source }`; `source` is `"direct"` or `"background-tab"`.
 
 ## Per-provider specifics
-- **Claude**: org-id discovery then `/usage`; cookie auth. See [[claude-ai-usage-api]].
+- **Claude**: org-id discovery then `/usage`; cookie auth. While a limit is at 100% it also reads
+  `/prepaid/credits` (the purchased-credit balance); a failure there only omits the balance.
+  See [[claude-ai-usage-api]].
 - **Codex**: session token + `ChatGPT-Account-Id` header then `/wham/usage`. See
   [[chatgpt-codex-usage-api]].
 
